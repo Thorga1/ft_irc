@@ -1,5 +1,5 @@
 #include "server.hpp"
-#include <poll.h>
+
 
 server	parse_av(char **av)
 {
@@ -73,8 +73,6 @@ void ft_main_socket(server serv)
 					continue;
 				}
 				buffer[bytes] = '\0';
-				std::cout << "Reçu de fd=" << fds[i].fd << ": " << buffer << std::endl;
-				send(fds[i].fd, buffer, bytes, 0);
 			}
 			else if (fds[i].revents & (POLLHUP | POLLERR))
 			{
