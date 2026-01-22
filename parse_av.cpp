@@ -44,11 +44,11 @@ void ft_main_socket(server serv)
 		int ret = poll(fds.data(), fds.size(), -1);
 		if (ret < 0)
 			throw std::runtime_error("error: poll");
-		for (size_t i = 0; i < fds.size(); i++)
+		for (size_t i = 0; i < fds.size(); i++) // LA BOUCLE LIT EN CONTINU FDS 
 		{
 			if (fds[i].fd == n && (fds[i].revents & POLLIN))
 			{
-				sockaddr_in client_addr;
+				sockaddr_in client_addr; // SOCKET SECONDAIRE QUI APPARTIENT AU CLIENT
 				socklen_t client_len = sizeof(client_addr);
 				int client_fd = accept(n, (sockaddr*)&client_addr, &client_len);
 				if (client_fd < 0) 
@@ -63,12 +63,12 @@ void ft_main_socket(server serv)
 			else if (fds[i].revents & POLLIN)
 			{
 				char buffer[1024];
-				ssize_t bytes = recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0);
+				ssize_t bytes = recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0); // CORRESPOND AUX REQUETES ENVOYES PAR NETCAT ET IRC
 				if (bytes <= 0)
 				{
-					std::cout << "Client fd=" << fds[i].fd << " déconnecté." << std::endl;
+					std::cout << "Client fd=" << fds[i].fd << " déconnecté." << std::endl; // JAI MIS JUSTE COUT POUR PAS QUE LE PROGRAMME CRASH
 					close(fds[i].fd);
-					fds.erase(fds.begin() + i);
+					fds.erase(fds.begin() + i);  // EFFACE LES DONNES DU CLIENT DANS FDS
 					i--;
 					continue;
 				}
