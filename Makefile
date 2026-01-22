@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -Werror -std=c++98
 OBJ_DIR = obj
 SRC = main.cpp \
 	parse_av.cpp \
-	irc.cpp
+	server.cpp
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 DIRS = $(sort $(dir $(OBJ)))
 

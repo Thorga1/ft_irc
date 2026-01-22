@@ -2,6 +2,10 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <vector>
 
 class server
 {
@@ -16,4 +20,5 @@ public:
 	~server();
 };
 
-void	parse_av(char **av);
+server	parse_av(char **av);
+void ft_main_socket(server serv);

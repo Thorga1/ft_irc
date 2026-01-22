@@ -1,4 +1,5 @@
-#include "irc.hpp"
+#include "server.hpp"
+
 
 int main(int ac, char **av)
 {
@@ -7,7 +8,10 @@ int main(int ac, char **av)
 		if (ac != 3)
 			throw std::runtime_error("wrong paramater given");
 		else if (ac == 3)
-			parse_av(av);
+		{
+			server serv = parse_av(av);
+			ft_main_socket(serv);
+		}
 	}
 	catch(const std::exception& e)
 	{
