@@ -9,19 +9,35 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <map>
+#include "client.hpp"
+#include "client_handler.hpp"
 
-class server
+class Server
 {
 private:
-	std::string		_password;
-	unsigned int	_port;
+	std::string						_password;
+	unsigned int					_port;
+	int								_socket_fd;
+	std::vector<pollfd>				_fds;
+	std::map<int, Client*>			_clients;
+	ClientHandler					_handler;
+
+	void							acceptNewClient();
+	void							handleClientData(size_t fd_index);
+	void							removeClient(size_t fd_index);
+	void							broadcastMessage(const std::string& message);
 
 public:
-	server(std::string password, unsigned int port);
-	unsigned int getport();
-	std::string getpassword();
-	~server();
+	Server(std::string password, unsigned int port);
+	~Server();
+	unsigned int	getPort() const;
+	std::string		getPassword() const;
+	void			start();
+	void			run();
+	void			stop();
 };
 
-server	parse_av(char **av);
-void ft_main_socket(server serv);
+Server	parseArguments(char **av);
+bool	isValidPort(unsigned int port);
+bool	isPortNumber(const std::string& str);
