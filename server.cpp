@@ -82,13 +82,64 @@ void Server::acceptNewClient()
 			  << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << std::endl;
 }
 
+// void Server::handleClientData(size_t fd_index, std::map<int, Client *> clients)
+// {
+// 	int fd = _fds[fd_index].fd;
+// 	Client *client = _clients[fd];
+
+// 	char buffer[4096];
+// 	ssize_t bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
+// 	if (bytes <= 0)
+// 	{
+// 		std::cout << "Client disconnected: fd=" << fd << std::endl;
+// 		removeClient(fd_index);
+// 		return;
+// 	}
+
+// 	buffer[bytes] = '\0';
+// 	std::string data(buffer);
+// 	size_t pos = 0;
+// 	while (pos < data.length())
+// 	{
+// 		size_t end = data.find('\n', pos);
+// 		if (end == std::string::npos)
+// 			break;
+
+// 		std::string command = data.substr(pos, end - pos);
+// 		if (!command.empty() && command[command.length() - 1] == '\r')
+// 			command.erase(command.length() - 1);
+
+// 		if (!command.empty())
+// 			_handler.processCommand(*client, command, clients);
+
+// 		pos = end + 1;
+// 	}
+// }
+void channelIn(std::string& str) // WRAPPERS PROVISOIRES
+{
+    std::cin >> str;
+}
+
+
+void channelOut(const std::string& str) // WRAPPERS PROVISOIRES
+{
+    std::cout << str << std::endl;
+}
+
+void Server::putUserInChannel(std::string user, std::string channel_id, int fd)
+{
+	Channel chnl = this->_channels[channel_id];
+	chnl.setUser(user, fd);
+}
+
 void Server::handleClientData(size_t fd_index, std::map<int, Client *> clients)
 {
 	int fd = _fds[fd_index].fd;
-	Client *client = _clients[fd];
+	Client* client = _clients[fd];
 
 	char buffer[4096];
 	ssize_t bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
+	
 	if (bytes <= 0)
 	{
 		std::cout << "Client disconnected: fd=" << fd << std::endl;
@@ -98,22 +149,40 @@ void Server::handleClientData(size_t fd_index, std::map<int, Client *> clients)
 
 	buffer[bytes] = '\0';
 	std::string data(buffer);
-	size_t pos = 0;
-	while (pos < data.length())
-	{
-		size_t end = data.find('\n', pos);
-		if (end == std::string::npos)
-			break;
+	if (!data.empty() && data[data.length() - 1] == '\n')
+		data.erase(data.length() - 1);
+	if (!data.empty() && data[data.length() - 1] == '\r')
+		data.erase(data.length() - 1);
 
-		std::string command = data.substr(pos, end - pos);
-		if (!command.empty() && command[command.length() - 1] == '\r')
-			command.erase(command.length() - 1);
+    this->_channels.insert(std::make_pair(client->getUsername(), Channel(fd)));
+	if (data == "J" || data == "j")
+    {
+        _handler.sendReply(fd, "What is the channel you would like to join?");
+    }
+    else
+    {
+        size_t pos = 0;
+        while (pos < data.length())
+        {
+            size_t end = data.find('\n', pos);
+            if (end == std::string::npos)
+            {
+                std::string command = data.substr(pos);
+                if (!command.empty())
+                    _handler.processCommand(*client, command, clients);
+                break;
+            }
 
-		if (!command.empty())
-			_handler.processCommand(*client, command, clients);
+            std::string command = data.substr(pos, end - pos);
+            if (!command.empty() && command[command.length() - 1] == '\r')
+                command.erase(command.length() - 1);
 
-		pos = end + 1;
-	}
+            if (!command.empty())
+                _handler.processCommand(*client, command, clients);
+
+            pos = end + 1;
+        }
+    }
 }
 
 void Server::removeClient(size_t fd_index)

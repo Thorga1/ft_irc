@@ -5,7 +5,8 @@ OBJ_DIR = obj
 SRC = main.cpp \
 	server.cpp \
 	client.cpp \
-	client_handler.cpp
+	client_handler.cpp \
+	channel.cpp
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 DIRS = $(sort $(dir $(OBJ)))
 
