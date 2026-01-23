@@ -59,6 +59,10 @@ void ft_main_socket(server serv)
                 client_pollfd.events = POLLIN;
                 fds.push_back(client_pollfd);
                 std::cout << "Nouveau client connecté, fd=" << client_fd << std::endl;
+				// A FAIRE
+				/// FAIRE RECEVOIR LES COMMANDES IRSSI OU NETCAT AVEC recv()
+				// QUIL VA FALLOIR TRAITER 
+				// AVEC UN GENRE DE GET NEXT LINE CAR IRSSI RECOIT LES COMMANDES SUR PLUSIEURS RECV
 			}
 			else if (fds[i].revents & POLLIN)
 			{
@@ -66,7 +70,7 @@ void ft_main_socket(server serv)
 				ssize_t bytes = recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0); // CORRESPOND AUX REQUETES ENVOYES PAR NETCAT ET IRC
 				if (bytes <= 0)
 				{
-					std::cout << "Client fd=" << fds[i].fd << " déconnecté." << std::endl; // JAI MIS JUSTE COUT POUR PAS QUE LE PROGRAMME CRASH
+					std::cout << "Client fd=" << fds[i].fd << " déconnecté." << std::endl; // JAI MIS JUSTE COUT POUR PAS QUE LE PROGRAMME SARRETE
 					close(fds[i].fd);
 					fds.erase(fds.begin() + i);  // EFFACE LES DONNES DU CLIENT DANS FDS
 					i--;
