@@ -1,6 +1,6 @@
 #include "client.hpp"
 
-Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _buffer(""), _authenticated(false)
+Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _realname(""), _buffer(""), _status(PENDING)
 {
 }
 
@@ -15,44 +15,39 @@ int Client::getFd() const
 	return _fd;
 }
 
-const std::string& Client::getNickname() const
+const std::string &Client::getNickname() const
 {
 	return _nickname;
 }
 
-const std::string& Client::getUsername() const
+const std::string &Client::getUsername() const
 {
 	return _username;
 }
 
-bool Client::isAuthenticated() const
+const std::string &Client::getRealname() const
 {
-	return _authenticated;
+	return _realname;
 }
 
-void Client::setNickname(const std::string& nickname)
+void Client::setNickname(const std::string &nickname)
 {
 	_nickname = nickname;
 }
 
-void Client::setUsername(const std::string& username)
+void Client::setUsername(const std::string &username)
 {
 	_username = username;
 }
 
-void Client::setAuthenticated(bool auth)
+void Client::setRealname(const std::string &realname)
 {
-	_authenticated = auth;
+	_realname = realname;
 }
 
-void Client::appendBuffer(const std::string& data)
+void Client::appendBuffer(const std::string &data)
 {
 	_buffer += data;
-}
-
-std::string Client::getBuffer() const
-{
-	return _buffer;
 }
 
 void Client::clearBuffer()
@@ -67,4 +62,24 @@ void Client::disconnect()
 		close(_fd);
 		_fd = -1;
 	}
+}
+
+Client::e_status Client::getStatus() const
+{
+	return _status;
+}
+
+void Client::setStatus(e_status status)
+{
+	_status = status;
+}
+
+bool Client::isRegistered() const
+{
+	return _status == REGISTERED;
+}
+
+std::string &Client::getBuffer()
+{
+	return _buffer;
 }

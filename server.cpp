@@ -1,14 +1,14 @@
 #include "server.hpp"
 
 Server::Server(std::string password, unsigned int port)
-	: _password(password), _port(port), _socket_fd(-1)
+	: _password(password), _port(port), _socket_fd(-1), _handler(this)
 {
 }
 
 Server::~Server()
 {
 	stop();
-	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 		delete it->second;
 	_clients.clear();
 }
@@ -23,7 +23,7 @@ std::string Server::getPassword() const
 	return _password;
 }
 
-std::map<int, Client*> Server::getClients() const
+std::map<int, Client *> Server::getClients() const
 {
 	return _clients;
 }
@@ -44,7 +44,7 @@ void Server::start()
 	sin.sin_port = htons(_port);
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if (bind(_socket_fd, (struct sockaddr*)&sin, sizeof(sin)) < 0)
+	if (bind(_socket_fd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
 		throw std::runtime_error("Error: Bind failed");
 
 	if (listen(_socket_fd, SOMAXCONN) < 0)
@@ -65,7 +65,7 @@ void Server::acceptNewClient()
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 
-	int client_fd = accept(_socket_fd, (sockaddr*)&client_addr, &client_len);
+	int client_fd = accept(_socket_fd, (sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0)
 		return;
 	fcntl(client_fd, F_SETFL, O_NONBLOCK);
@@ -75,17 +75,17 @@ void Server::acceptNewClient()
 	client_poll.events = POLLIN;
 	_fds.push_back(client_poll);
 
-	Client* client = new Client(client_fd);
+	Client *client = new Client(client_fd);
 	_clients[client_fd] = client;
 
 	std::cout << "New client connected: fd=" << client_fd << " from "
 			  << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << std::endl;
 }
 
-void Server::handleClientData(size_t fd_index, std::map<int, Client*> clients)
+void Server::handleClientData(size_t fd_index, std::map<int, Client *> clients)
 {
 	int fd = _fds[fd_index].fd;
-	Client* client = _clients[fd];
+	Client *client = _clients[fd];
 
 	char buffer[4096];
 	ssize_t bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
@@ -168,7 +168,7 @@ void Server::stop()
 		_socket_fd = -1;
 	}
 
-	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 		delete it->second;
 	_clients.clear();
 	_fds.clear();
@@ -176,7 +176,7 @@ void Server::stop()
 	std::cout << "IRC Server stopped" << std::endl;
 }
 
-bool isPortNumber(const std::string& str)
+bool isPortNumber(const std::string &str)
 {
 	if (str.empty())
 		return false;
@@ -210,4 +210,22 @@ Server parseArguments(char **av)
 		throw std::runtime_error("Error: Port must be between 1 and 65535");
 
 	return Server(av[2], port);
+}
+
+bool Server::isNickInUse(const std::string &nick) const
+{
+	std::string lowerNick = nick;
+	for (size_t i = 0; i < lowerNick.length(); ++i)
+		lowerNick[i] = std::tolower(lowerNick[i]);
+
+	for (std::map<int, Client *>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		std::string currentNick = it->second->getNickname();
+		for (size_t i = 0; i < currentNick.length(); ++i)
+			currentNick[i] = std::tolower(currentNick[i]);
+
+		if (currentNick == lowerNick)
+			return true;
+	}
+	return false;
 }
