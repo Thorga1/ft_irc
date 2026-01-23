@@ -109,18 +109,7 @@ void ClientHandler::checkRegistration(Client &client)
 	}
 }
 
-Client *findUser(const std::string &nickname, const std::map<int, Client *> &clients)
-{
-	for (std::map<int, Client *>::const_iterator it = clients.begin(); it != clients.end(); ++it)
-	{
-		Client *client = it->second;
-		if (client->getNickname() == nickname)
-			return client;
-	}
-	return NULL;
-}
-
-void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients)
+void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &args)
 {
 	if (args.size() < 3)
 	{
@@ -130,21 +119,17 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 	std::string target = args[1];
 	std::string message = args[2];
 	std::cout << "MSG from " << client.getNickname() << " to " << target << ": " << message << std::endl;
-	Client *receiver = findUser(target, clients);
-	std::cerr << message << std::endl;
-	ssize_t bytesSent = send(receiver->getFd(), message.c_str(), message.size(), 0);
-	if (bytesSent == -1)
-		std::cerr << "error: Failed to send the message send()" << std::endl;
 }
 
 void ClientHandler::handleQuit(Client &client, const std::vector<std::string> &args)
 {
-	std::string reason = (args.size() > 1) ? args[1] : "Leaving";
-	std::cout << client.getNickname() << " quit: " << reason << std::endl;
-	client.disconnect();
+	std::string reason = (args.size() > 1) ? args[1] : "Client quit";
+	sendReply(client.getFd(), "ERROR :Closing Link: " + client.getNickname() + " (" + reason + ")");
+	client.setStatus(Client::DISCONNECTED);
+	std::cout << "[QUIT] Client " << client.getNickname() << " a demandé à quitter." << std::endl;
 }
 
-void ClientHandler::processCommand(Client &client, const std::string &command, std::map<int, Client *> clients)
+void ClientHandler::processCommand(Client &client, const std::string &command)
 {
 	std::vector<std::string> args = parseCommand(command);
 
@@ -181,7 +166,7 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 	}
 
 	if (cmd == "PRIVMSG" || cmd == "MSG")
-		handleMsg(client, args, clients);
+		handleMsg(client, args);
 	else if (cmd == "QUIT")
 		handleQuit(client, args);
 	else if (cmd == "NICK")

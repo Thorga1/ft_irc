@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cerrno>
 #include <iostream>
 #include <cstdlib>
 #include <sys/socket.h>
@@ -12,10 +13,6 @@
 #include <map>
 #include "client.hpp"
 #include "client_handler.hpp"
-#include <map>
-#include "channel.hpp"
-
-class Channel;
 
 class Server
 {
@@ -26,10 +23,9 @@ private:
 	std::vector<pollfd> _fds;
 	std::map<int, Client *> _clients;
 	ClientHandler _handler;
-	std::map<std::string, Channel>	_channels;
 
 	void acceptNewClient();
-	void handleClientData(size_t fd_index, std::map<int, Client *> clients);
+	bool handleClientData(size_t fd_index);
 	void removeClient(size_t fd_index);
 	void broadcastMessage(const std::string &message);
 
@@ -38,12 +34,10 @@ public:
 	~Server();
 	unsigned int getPort() const;
 	std::string getPassword() const;
-	std::map<int, Client *> getClients() const;
 	void start();
 	void run();
 	void stop();
 	bool isNickInUse(const std::string &nick) const;
-	void			putUserInChannel(std::string user, std::string channel_id, int fd);
 };
 
 Server parseArguments(char **av);

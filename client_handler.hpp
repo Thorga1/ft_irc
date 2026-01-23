@@ -4,7 +4,6 @@
 #include <vector>
 #include <sys/socket.h>
 #include "client.hpp"
-#include <map>
 
 class Server;
 
@@ -13,17 +12,18 @@ class ClientHandler
 public:
 	ClientHandler(Server *server);
 	~ClientHandler();
-	void processCommand(Client &client, const std::string &command, std::map<int, Client *> clients);
-	void sendReply(int fd, const std::string &reply);
+	void processCommand(Client &client, const std::string &command);
+
 private:
+	Server *_server;
+
+	std::vector<std::string> parseCommand(const std::string &command);
+	void sendReply(int fd, const std::string &reply);
+	void checkRegistration(Client &client);
+
 	void handleNick(Client &client, const std::vector<std::string> &args);
 	void handleUser(Client &client, const std::vector<std::string> &args);
 	void handlePass(Client &client, const std::vector<std::string> &args);
-	void handleMsg(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients);
+	void handleMsg(Client &client, const std::vector<std::string> &args);
 	void handleQuit(Client &client, const std::vector<std::string> &args);
-	std::vector<std::string> parseCommand(const std::string &command);
-	void checkRegistration(Client &client);
-	Server *_server;
 };
-
-Client *findUser(const std::string &nickname, const std::map<int, Client *> &clients);
