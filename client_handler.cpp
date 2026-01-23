@@ -127,14 +127,31 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 		sendReply(client.getFd(), ":server 411 " + client.getNickname() + " :No recipient given (PRIVMSG)");
 		return;
 	}
+
 	std::string target = args[1];
 	std::string message = args[2];
-	std::cout << "MSG from " << client.getNickname() << " to " << target << ": " << message << std::endl;
+
+	std::cout << "MSG from " << client.getNickname() << "!" << client.getUsername() << "@localhost PRIVMSG " << " to " << target << ":" << message << "\r\n" << std::endl;
+
 	Client *receiver = findUser(target, clients);
-	std::cerr << message << std::endl;
-	ssize_t bytesSent = send(receiver->getFd(), message.c_str(), message.size(), 0);
+
+	if (receiver == NULL || receiver->getFd() == -1)
+	{
+		sendReply(client.getFd(), ":server 401 " + client.getNickname() + " " + target + " :No such nick/channel");
+		std::cerr << "Invalid receiver for target: " << target << std::endl;
+		return;
+	}
+std::string formattedMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
+
+
+	std::cerr << "Sending to " << target << ": " << formattedMessage << std::endl;
+
+	ssize_t bytesSent = send(receiver->getFd(), formattedMessage.c_str(), formattedMessage.size(), 0);
+
 	if (bytesSent == -1)
-		std::cerr << "error: Failed to send the message send()" << std::endl;
+		std::cerr << "error: send()" << std::endl;
+	else
+		std::cout << "Sent " << bytesSent << " bytes to " << receiver->getNickname() << std::endl;
 }
 
 void ClientHandler::handleQuit(Client &client, const std::vector<std::string> &args)
