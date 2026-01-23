@@ -36,6 +36,8 @@ public:
 	void			start();
 	void			run();
 	void			stop();
+	bool			isNickInUse(const std::string& nick) const;
+
 };
 
 Server	parseArguments(char **av);

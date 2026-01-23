@@ -11,4 +11,8 @@ TO DO:
 4. send and receive private messages
 . check if user exists
 
+5. QUIT implemented ??
+
+6. fonction log pour remplacer les cout dans le projetl
+
 DONE:

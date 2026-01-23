@@ -1,7 +1,7 @@
 #include "server.hpp"
 
 Server::Server(std::string password, unsigned int port)
-	: _password(password), _port(port), _socket_fd(-1)
+	: _password(password), _port(port), _socket_fd(-1), _handler(this)
 {
 }
 
@@ -208,4 +208,22 @@ Server parseArguments(char **av)
 		throw std::runtime_error("Error: Port must be between 1 and 65535");
 
 	return Server(av[2], port);
+}
+
+bool Server::isNickInUse(const std::string& nick) const
+{
+    std::string lowerNick = nick;
+    for (size_t i = 0; i < lowerNick.length(); ++i)
+        lowerNick[i] = std::tolower(lowerNick[i]);
+
+    for (std::map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+        std::string currentNick = it->second->getNickname();
+        for (size_t i = 0; i < currentNick.length(); ++i)
+            currentNick[i] = std::tolower(currentNick[i]);
+
+        if (currentNick == lowerNick)
+            return true;
+    }
+    return false;
 }
