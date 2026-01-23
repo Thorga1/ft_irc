@@ -12,6 +12,7 @@
 #include <map>
 #include "client.hpp"
 #include "client_handler.hpp"
+#include <map>
 
 class Server
 {
@@ -23,8 +24,9 @@ private:
 	std::map<int, Client*>			_clients;
 	ClientHandler					_handler;
 
+	
 	void							acceptNewClient();
-	void							handleClientData(size_t fd_index);
+	void							handleClientData(size_t fd_index, std::map<int, Client*> clients);
 	void							removeClient(size_t fd_index);
 	void							broadcastMessage(const std::string& message);
 
@@ -33,6 +35,7 @@ public:
 	~Server();
 	unsigned int	getPort() const;
 	std::string		getPassword() const;
+	std::map<int, Client*> getClients() const;
 	void			start();
 	void			run();
 	void			stop();
