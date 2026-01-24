@@ -4,11 +4,27 @@ Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _realname(""), _
 {
 }
 
+Client::Client() {}
+
 Client::~Client()
 {
 	if (_fd >= 0)
 		close(_fd);
 }
+
+Client &Client::operator=(const Client &other)
+{
+	if (this != &other)
+	{
+		_fd = other._fd;
+		_nickname = other._nickname;
+		_realname = other._realname;
+		_buffer = other._buffer;
+		_status = other._status;
+	}
+	return *this;
+}
+
 
 int Client::getFd() const
 {
@@ -72,6 +88,11 @@ Client::e_status Client::getStatus() const
 void Client::setStatus(e_status status)
 {
 	_status = status;
+}
+
+void Client::setFd(int fd)
+{
+	_fd = fd;
 }
 
 bool Client::isRegistered() const

@@ -229,3 +229,19 @@ bool Server::isNickInUse(const std::string &nick) const
 	}
 	return false;
 }
+
+Channel *Server::findChannel(const std::string &name)
+{
+    std::map<std::string, Channel>::iterator it = _channels.find(name);
+    if (it == _channels.end())
+        return NULL;
+    return &it->second;
+}
+
+Channel &Server::createChannel(const std::string &name, const Client &creator)
+{
+    Channel ch(creator.getFd(), name, static_cast<int>(_channels.size()) + 1);
+    _channels[name] = ch;
+    _channels[name].setUser(creator.getNickname(), creator.getFd());
+    return _channels[name];
+}

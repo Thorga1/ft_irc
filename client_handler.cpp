@@ -12,6 +12,8 @@ ClientHandler::~ClientHandler()
 {
 }
 
+ClientHandler::ClientHandler() {}
+
 std::vector<std::string> ClientHandler::parseCommand(const std::string &command)
 {
 	std::vector<std::string> args;
@@ -109,7 +111,7 @@ void ClientHandler::checkRegistration(Client &client)
 	}
 }
 
-Client *findUser(const std::string &nickname, const std::map<int, Client *> &clients)
+Client *ClientHandler::findUser(const std::string &nickname, const std::map<int, Client *> &clients)
 {
 	for (std::map<int, Client *>::const_iterator it = clients.begin(); it != clients.end(); ++it)
 	{
@@ -133,6 +135,20 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 
 	std::cout << "MSG from " << client.getNickname() << "!" << client.getUsername() << "@localhost PRIVMSG " << " to " << target << ":" << message << "\r\n" << std::endl;
 
+	if (!target.empty() && (target[0] == '#' || target[0] == '&'))
+	{
+		Channel *ch = _server->findChannel(target);
+		if (!ch)
+		{
+			sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + target + " :No such channel");
+			return;
+		}
+		std::string formatted = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost PRIVMSG " + target + " :" + message;
+		sendReply(client.getFd(), formatted);
+		ch->broadcastMessage(formatted + "\r\n", client.getFd());
+		return;
+	}
+
 	Client *receiver = findUser(target, clients);
 
 	if (receiver == NULL || receiver->getFd() == -1)
@@ -141,7 +157,7 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 		std::cerr << "Invalid receiver for target: " << target << std::endl;
 		return;
 	}
-std::string formattedMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
+	std::string formattedMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
 
 
 	std::cerr << "Sending to " << target << ": " << formattedMessage << std::endl;
@@ -159,6 +175,49 @@ void ClientHandler::handleQuit(Client &client, const std::vector<std::string> &a
 	std::string reason = (args.size() > 1) ? args[1] : "Leaving";
 	std::cout << client.getNickname() << " quit: " << reason << std::endl;
 	client.disconnect();
+}
+
+void ClientHandler::handleJoin(Client &client, const std::vector<std::string> &args)
+{
+	if (args.size() < 2)
+	{
+		sendReply(client.getFd(), ":server 461 " + client.getNickname() + " JOIN :Not enough parameters");
+		return;
+	}
+
+	std::string list = args[1];
+	size_t start = 0;
+	while (start <= list.size())
+	{
+		size_t comma = list.find(',', start);
+		std::string name = (comma == list.npos) ? list.substr(start) : list.substr(start, comma - start);
+		if (!name.empty())
+		{
+			if (name[0] != '#' && name[0] != '&')
+			{
+				sendReply(client.getFd(), ":server 479 " + client.getNickname() + " " + name + " :Illegal channel name");
+			}
+			else
+			{
+				Channel *ch = _server->findChannel(name);
+				if (!ch)
+				{
+					Channel &created = _server->createChannel(name, client);
+					ch = &created;
+				}
+				if (!ch->hasUser(client.getNickname()))
+				{
+					ch->setUser(client.getNickname(), client.getFd());
+					std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost JOIN " + name;
+					// Notify self and others
+					sendReply(client.getFd(), joinMsg);
+					ch->broadcastMessage(joinMsg + "\r\n", client.getFd());
+				}
+			}
+		}
+		if (comma == list.npos) break;
+		start = comma + 1;
+	}
 }
 
 void ClientHandler::processCommand(Client &client, const std::string &command, std::map<int, Client *> clients)
@@ -199,6 +258,8 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 
 	if (cmd == "PRIVMSG" || cmd == "MSG")
 		handleMsg(client, args, clients);
+	else if (cmd == "JOIN")
+		handleJoin(client, args);
 	else if (cmd == "QUIT")
 		handleQuit(client, args);
 	else if (cmd == "NICK")

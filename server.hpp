@@ -12,6 +12,7 @@
 #include <map>
 #include "client.hpp"
 #include "client_handler.hpp"
+#include "channel.hpp"
 #include <map>
 
 class Server
@@ -22,6 +23,7 @@ private:
 	int _socket_fd;
 	std::vector<pollfd> _fds;
 	std::map<int, Client *> _clients;
+	std::map<std::string, Channel> _channels;
 	ClientHandler _handler;
 
 	void acceptNewClient();
@@ -35,6 +37,11 @@ public:
 	unsigned int getPort() const;
 	std::string getPassword() const;
 	std::map<int, Client *> getClients() const;
+	std::map<std::string, Channel> &getChannels();
+	const std::map<std::string, Channel> &getChannels() const;
+	Channel *findChannel(const std::string &name);
+	Channel &createChannel(const std::string &name, const Client &creator);
+	void removeClientFromChannels(const std::string &nickname);
 	void start();
 	void run();
 	void stop();

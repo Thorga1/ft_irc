@@ -29,6 +29,7 @@ private:
 public:
 	Client(int fd);
 	~Client();
+	Client();
 
 	int getFd() const;
 	const std::string &getNickname() const;
@@ -48,4 +49,6 @@ public:
 	e_status getStatus() const;
 	void setStatus(e_status status);
 	bool isRegistered() const;
+	void setFd(int fd);
+	Client &operator=(const Client &other);
 };
