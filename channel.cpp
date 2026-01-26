@@ -68,8 +68,15 @@ void Channel::setAdmin(std::string userId, int value)
     }
 }
 
-void Channel::kick(std::string)
+void Channel::kick(std::string str)
 {
+	ClientHandler a;
+    Client *user = a.findUser(str, this->_users);
+	if (!this->hasAdmin(str) && this->hasUser(str))
+	{
+		int fd = user->getFd();
+		this->_users.erase(fd);
+	}
 }
 
 void Channel::mode(std::string str)

@@ -62,6 +62,44 @@ void ClientHandler::handleNick(Client &client, const std::vector<std::string> &a
 	checkRegistration(client);
 }
 
+void ClientHandler::handleKick(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients)
+{
+	if (args.size() < 3)
+	{
+		sendReply(client.getFd(), ":server 461 " + client.getNickname() + " KICK :Not enough parameters");
+		return;
+	}
+	std::string channelName = args[1];
+	std::string targetNick = args[2];
+
+	Channel *ch = _server->findChannel(channelName);
+	if (!ch)
+	{
+		sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+	if (!ch->hasAdmin(client.getNickname()))
+	{
+		sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+	Client *targetClient = findUser(targetNick, clients);
+	if (!targetClient || (!ch->hasUser(targetNick) && !ch->hasAdmin(targetNick)))
+	{
+		sendReply(client.getFd(), ":server 441 " + client.getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
+		return;
+	}
+	if (ch->hasAdmin(targetNick))
+    {
+        sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + channelName + " :Cannot kick channel operator");
+        return;
+    }
+	std::string kickMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost KICK " + channelName + " " + targetNick + "\r\n";
+	ch->broadcastMessage(kickMsg, -1);
+	ch->kick(targetNick); 
+}
+
+
 void ClientHandler::handleUser(Client &client, const std::vector<std::string> &args)
 {
 	if (args.size() < 5)
@@ -380,6 +418,8 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 		handleJoin(client, args);
 	else if (cmd == "INVITE")
 		handleInvite(client, args, clients);
+	else if (cmd == "KICK")
+		handleKick(client, args, clients);
 	else if (cmd == "QUIT")
 		handleQuit(client, args);
 	else if (cmd == "NICK")
