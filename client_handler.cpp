@@ -159,7 +159,6 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 	}
 	std::string formattedMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
 
-
 	std::cerr << "Sending to " << target << ": " << formattedMessage << std::endl;
 
 	ssize_t bytesSent = send(receiver->getFd(), formattedMessage.c_str(), formattedMessage.size(), 0);
@@ -205,13 +204,21 @@ void ClientHandler::handleJoin(Client &client, const std::vector<std::string> &a
 					Channel &created = _server->createChannel(name, client);
 					ch = &created;
 				}
+				if (ch->isInviteOnly() && !ch->isInInvitedUsers(client.getNickname()))
+				{
+					sendReply(client.getFd(), ":server 473 " + client.getNickname() + " " + name + " :Cannot join channel (+i)");
+					continue;
+				}
 				if (!ch->hasUser(client.getNickname()))
 				{
 					ch->setUser(client.getNickname(), client.getFd());
 					std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost JOIN " + name;
-					// Notify self and others
 					sendReply(client.getFd(), joinMsg);
 					ch->broadcastMessage(joinMsg + "\r\n", client.getFd());
+					if (ch->isInviteOnly())
+					{
+						ch->removeFromInvited(client.getNickname());
+					}
 				}
 			}
 		}
@@ -220,6 +227,85 @@ void ClientHandler::handleJoin(Client &client, const std::vector<std::string> &a
 	}
 }
 
+void ClientHandler::handleTopic(Client &client, const std::vector<std::string> &args)
+{
+	if (args.size() < 2)
+	{
+		sendReply(client.getFd(), ":server 461 " + client.getNickname() + " TOPIC :Not enough parameters");
+		return;
+	}
+	if (args[1][0] != '#' && args[1][0] != '&')
+	{
+		sendReply(client.getFd(), ":server 479 " + client.getNickname() + " " + args[1] + " :Illegal channel name");
+		return;
+	}
+	std::string channelName = args[1];
+	if (!_server->findChannel(channelName))
+	{
+		sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+	if (!(_server->findChannel(channelName))->hasUser(client.getNickname()) && !(_server->findChannel(channelName))->hasAdmin(client.getNickname()))
+	{
+		sendReply(client.getFd(), ":server 442 " + client.getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+	Channel *ch = _server->findChannel(channelName);
+	if (args.size() == 2)
+	{
+		std::string topic = ch->getTopic();;
+		if (topic.empty())
+		{
+			sendReply(client.getFd(), ":server 331 " + client.getNickname() + " " + channelName + " :No topic is set");
+		}
+		else
+		{
+			sendReply(client.getFd(), ":server 332 " + client.getNickname() + " " + channelName + " :" + topic);
+		}
+	}
+	else if (args.size() >= 3)
+	{
+		std::string newTopic = args[2];
+		ch->topic(newTopic);
+		std::string topicMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost TOPIC " + channelName + " :" + newTopic;
+		sendReply(client.getFd(), topicMsg);
+		ch->broadcastMessage(topicMsg + "\r\n", client.getFd());
+	}
+}
+
+void ClientHandler::handleInvite(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients)
+{
+    int fd = client.getFd();
+    if (args.size() < 3)
+    {
+        sendReply(fd, ":server 461 " + client.getNickname() + " INVITE :Not enough parameters");
+        return;
+    }
+    std::string targetNick = args[1];
+    std::string channelName = args[2];
+    Client *targetClient = findUser(targetNick, clients);
+    if (!targetClient)
+    {
+        sendReply(fd, ":server 401 " + client.getNickname() + " " + targetNick + " :No such nick/channel");
+        return;
+    }
+    Channel *ch = _server->findChannel(channelName);
+    if (!ch)
+    {
+        sendReply(fd, ":server 403 " + client.getNickname() + " " + channelName + " :No such channel");
+        return;
+    }
+    if (!ch->hasUser(client.getNickname()) && !ch->hasAdmin(client.getNickname()))
+    {
+        sendReply(fd, ":server 442 " + client.getNickname() + " " + channelName + " :You're not on that channel");
+        return;
+    }
+
+    ch->invite(targetNick);
+    sendReply(fd, ":server 341 " + client.getNickname() + " " + targetNick + " " + channelName);
+    std::string inviteMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost INVITE " + targetNick + " :" + channelName;
+    sendReply(targetClient->getFd(), inviteMsg);
+}
 void ClientHandler::processCommand(Client &client, const std::string &command, std::map<int, Client *> clients)
 {
 	std::vector<std::string> args = parseCommand(command);
@@ -260,10 +346,14 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 		handleMsg(client, args, clients);
 	else if (cmd == "JOIN")
 		handleJoin(client, args);
+	else if (cmd == "INVITE")
+		handleInvite(client, args, clients);
 	else if (cmd == "QUIT")
 		handleQuit(client, args);
 	else if (cmd == "NICK")
 		handleNick(client, args);
+	else if (cmd == "TOPIC")
+		handleTopic(client, args);
 	else if (cmd == "USER")
 		sendReply(client.getFd(), ":server 462 " + client.getNickname() + " :You may not reregister");
 	else

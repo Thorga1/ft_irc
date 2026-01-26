@@ -6,53 +6,121 @@
 // 	return this->_users->_fd;
 // }
 
+bool Channel::isInInvitedUsers(std::string userId)
+{
+	for (size_t i = 0; i < _invitedUsers.size(); ++i)
+	{
+		if (_invitedUsers[i] == userId)
+			return true;
+	}
+	return false;
+}
+
+bool Channel::isInviteOnly()
+{
+	return this->i;
+}
+
 void Channel::setUser(std::string userId, int value)
 {
+    ClientHandler a;
+
+    if (a.findUser(userId, this->_users) != NULL)
+    {
+        std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
+        send(value, error_msg.c_str(), error_msg.length(), 0);
+    }
+    else
+    {
+        Client *newUser = new Client(value);
+        newUser->setNickname(userId);
+        this->_users[value] = newUser;
+    }
+}
+
+void Channel::setAdmin(std::string userId, int value)
+{
+    ClientHandler a;
+
+    if (a.findUser(userId, this->_admin) != NULL)
+    {
+        std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
+        send(value, error_msg.c_str(), error_msg.length(), 0);
+    }
+    else
+    {
+        Client *newUser = new Client(value);
+        newUser->setNickname(userId);
+        this->_admin[value] = newUser;
+    }
+}
+
+void Channel::removeFromInvited(std::string clientId)
+{
+	for (std::vector<std::string>::iterator it = _invitedUsers.begin(); it != _invitedUsers.end(); ++it)
+	{
+		if (*it == clientId)
+		{
+			_invitedUsers.erase(it);
+			return;
+		}
+	}
+}
+
+void Channel::invite(std::string clientId)
+{
+	if (this->hasUser(clientId) || this->hasAdmin(clientId) || this->isInInvitedUsers(clientId))
+		return;
+	
+	_invitedUsers.push_back(clientId);
+}
+
+void Channel::promoteToAdmin(std::string userId, int value)
+{
 	ClientHandler a;
-
-	if (a.findUser(userId, this->_users) != NULL || a.findUser(userId, this->_admin) != NULL)
+	Client *user = a.findUser(userId, this->_users);
+	if (user != NULL)
 	{
-		Client *tmp;
-		tmp = a.findUser(userId, this->_users);
-		if (tmp == NULL)
-			throw std::runtime_error("jkdslahgfdsuxc");
-		tmp->setFd(value);
-
-	}
-	else
-	{
-		std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
-		send(value, error_msg.c_str(), error_msg.length(), 0);
+		this->_admin[value] = user;
+		this->_users.erase(value);
 	}
 }
 
-Channel::Channel() : _creatorFd(-1)
+void Channel::demoteFromAdmin(std::string adminId)
+{
+	ClientHandler a;
+	Client *admin = a.findUser(adminId, this->_admin);
+	if (admin != NULL)
+	{
+		this->_users[admin->getFd()] = admin;
+		this->_admin.erase(admin->getFd());
+	}
+}
+
+Channel::Channel() : _creatorFd(-1), i(false)
 {
 }
 
-Channel::Channel(int creatorFd, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid)
+Channel::Channel(int creatorFd, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""), i(false)
 {
-	this->_topicStr = "default_channel";
-	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
+	this->_channelIdStr = "default_channel";
+	std::string confirmation = "Created " + this->_channelIdStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
 }
 
-Channel::Channel(int creatorFd, std::string str, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(str)
+Channel::Channel(int creatorFd, std::string str, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""), _channelIdStr(str), i(false)
 {
-	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
+	std::string confirmation = "Created " + this->_channelIdStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
 }
 
-void Channel::kick(char)
+void Channel::kick(std::string )
 {
 }
 
-void Channel::invite(char)
+void Channel::topic(std::string newTopic)
 {
-}
-
-void Channel::topic(std::string)
-{
+	this->_topicStr = newTopic;
 }
 
 void Channel::mode(std::string)
@@ -76,10 +144,22 @@ Channel::~Channel()
 {
 }
 
+
+std::string Channel::getTopic() const
+{
+	return this->_topicStr;
+}
+
 bool Channel::hasUser(const std::string &userId)
 {
 	ClientHandler a;
 
-	return a.findUser(userId, this->_users) != NULL || a.findUser(userId, this->_admin);
+	return a.findUser(userId, this->_users) != NULL;
 }
 
+bool Channel::hasAdmin(const std::string &adminId)
+{
+	ClientHandler a;
+
+	return a.findUser(adminId, this->_admin) != NULL;
+}

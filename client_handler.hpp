@@ -29,6 +29,7 @@ private:
 	void handleTopic(Client &client, const std::vector<std::string> &args);
 	void handleMode(Client &client, const std::vector<std::string> &args);
 	void handleQuit(Client &client, const std::vector<std::string> &args);
+
 	std::vector<std::string> parseCommand(const std::string &command);
 	void sendReply(int fd, const std::string &reply);
 	void checkRegistration(Client &client);
