@@ -122,6 +122,33 @@ Client *ClientHandler::findUser(const std::string &nickname, const std::map<int,
 	return NULL;
 }
 
+void ClientHandler::handleMode(Client &client, const std::vector<std::string> &args)
+{
+	if (args.size() < 2)
+	{
+		sendReply(client.getFd(), ":server 461 " + client.getNickname() + " MODE :Not enough parameters");
+        return;
+	}
+	Channel *ch = _server->findChannel(args[1]);
+	if (!ch)
+	{
+		sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + args[1] + " :No such channel");
+		return;
+	}
+	if (!ch->hasAdmin(client.getNickname()))
+	{
+		sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + args[1] + " :You're not channel operator");
+		return;
+	}
+	if (args.size() == 2)
+	{
+		std::string reply = ch->getModes();
+		sendReply(client.getFd(), ":server 324 " + client.getNickname() + " " + args[1] + " :" + reply);
+		return;
+	}
+	ch->mode(args[2]);
+}
+
 void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients)
 {
 	if (args.size() < 3)
@@ -226,6 +253,7 @@ void ClientHandler::handleJoin(Client &client, const std::vector<std::string> &a
 		start = comma + 1;
 	}
 }
+
 
 void ClientHandler::handleTopic(Client &client, const std::vector<std::string> &args)
 {
@@ -356,6 +384,8 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 		handleQuit(client, args);
 	else if (cmd == "NICK")
 		handleNick(client, args);
+	else if (cmd == "MODE")
+		handleMode(client, args);
 	else if (cmd == "TOPIC")
 		handleTopic(client, args);
 	else if (cmd == "USER")

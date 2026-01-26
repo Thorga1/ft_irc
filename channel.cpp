@@ -21,6 +21,19 @@ bool Channel::isInviteOnly()
 	return this->i;
 }
 
+std::string Channel::getModes()
+{
+	std::string modes = "+";
+	if (this->i)
+		modes += "i";
+	if (this->t)
+		modes += "t";
+	if (this->k)
+		modes += "k";
+	if (this->l != -1)
+		modes += "l";
+	return modes;
+}
 void Channel::setUser(std::string userId, int value)
 {
     ClientHandler a;
@@ -53,6 +66,23 @@ void Channel::setAdmin(std::string userId, int value)
         newUser->setNickname(userId);
         this->_admin[value] = newUser;
     }
+}
+
+void Channel::kick(std::string)
+{
+}
+
+void Channel::mode(std::string str)
+{
+	if (str.find("+i") != std::string::npos)
+	{
+		this->i = true; // JUSTE POUR TESTER INVITE ONLY
+	}
+	else if (str.find("-i") != std::string::npos)
+	{
+		this->i = false;
+	}
+	// RAJOUTEZ LES MODES
 }
 
 void Channel::removeFromInvited(std::string clientId)
@@ -97,25 +127,37 @@ void Channel::demoteFromAdmin(std::string adminId)
 	}
 }
 
-Channel::Channel() : _creatorFd(-1), i(false)
+Channel::Channel() : _creatorFd(-1), 
+      _channelId(-1), 
+      _topicStr(""), 
+      _channelIdStr(""),
+      i(false),   
+      t(false),
+      k(false),
+	  key(""),
+      l(-1)
 {
 }
 
-Channel::Channel(int creatorFd, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""), i(false)
+Channel::Channel(int creatorFd, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""),  i(false),   
+      t(false),
+      k(false),
+	  key(""),
+      l(-1)
 {
 	this->_channelIdStr = "default_channel";
 	std::string confirmation = "Created " + this->_channelIdStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
 }
 
-Channel::Channel(int creatorFd, std::string str, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""), _channelIdStr(str), i(false)
+Channel::Channel(int creatorFd, std::string str, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""), _channelIdStr(str),  i(false),   
+      t(false),
+      k(false),
+	  key(""),
+      l(-1)
 {
 	std::string confirmation = "Created " + this->_channelIdStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
-}
-
-void Channel::kick(std::string )
-{
 }
 
 void Channel::topic(std::string newTopic)
@@ -123,9 +165,6 @@ void Channel::topic(std::string newTopic)
 	this->_topicStr = newTopic;
 }
 
-void Channel::mode(std::string)
-{
-}
 
 void Channel::broadcastMessage(const std::string &message, int senderFd)
 {
