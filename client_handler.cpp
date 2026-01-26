@@ -147,6 +147,9 @@ void ClientHandler::handleMode(Client &client, const std::vector<std::string> &a
 		return;
 	}
 	ch->mode(args[2]);
+	std::string modeMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost MODE " + args[1] + " " + args[2];
+    sendReply(client.getFd(), modeMsg);
+    ch->broadcastMessage(modeMsg + "\r\n", client.getFd());
 }
 
 void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients)
@@ -232,11 +235,8 @@ void ClientHandler::handleJoin(Client &client, const std::vector<std::string> &a
 					ch = &created;
 				}
 				if (ch->isInviteOnly() && !ch->isInInvitedUsers(client.getNickname()))
-				{
 					sendReply(client.getFd(), ":server 473 " + client.getNickname() + " " + name + " :Cannot join channel (+i)");
-					continue;
-				}
-				if (!ch->hasUser(client.getNickname()))
+				else if (!ch->hasUser(client.getNickname()))
 				{
 					ch->setUser(client.getNickname(), client.getFd());
 					std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost JOIN " + name;
