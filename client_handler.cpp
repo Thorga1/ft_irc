@@ -300,7 +300,11 @@ void ClientHandler::handleInvite(Client &client, const std::vector<std::string> 
         sendReply(fd, ":server 442 " + client.getNickname() + " " + channelName + " :You're not on that channel");
         return;
     }
-
+	if (ch->isInviteOnly() && !ch->hasAdmin(client.getNickname()))
+	{
+    	sendReply(fd, ":server 482 " + client.getNickname() + " " + channelName + " :You're not channel operator");
+    	return;
+	}
     ch->invite(targetNick);
     sendReply(fd, ":server 341 " + client.getNickname() + " " + targetNick + " " + channelName);
     std::string inviteMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost INVITE " + targetNick + " :" + channelName;
