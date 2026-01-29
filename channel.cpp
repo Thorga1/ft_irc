@@ -18,60 +18,60 @@ bool Channel::isInInvitedUsers(std::string userId)
 
 bool Channel::isInviteOnly()
 {
-	return this->i;
+	return this->_i;
 }
 
 std::string Channel::getModes()
 {
 	std::string modes = "+";
-	if (this->i)
+	if (this->_i)
 		modes += "i";
-	if (this->t)
+	if (this->_t)
 		modes += "t";
-	if (this->k)
+	if (this->_k)
 		modes += "k";
-	if (this->l != -1)
+	if (this->_l != -1)
 		modes += "l";
 	return modes;
 }
 void Channel::setUser(std::string userId, int value)
 {
-    ClientHandler a;
+	ClientHandler a;
 
-    if (a.findUser(userId, this->_users) != NULL)
-    {
-        std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
-        send(value, error_msg.c_str(), error_msg.length(), 0);
-    }
-    else
-    {
-        Client *newUser = new Client(value);
-        newUser->setNickname(userId);
-        this->_users[value] = newUser;
-    }
+	if (a.findUser(userId, this->_users) != NULL)
+	{
+		std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
+		send(value, error_msg.c_str(), error_msg.length(), 0);
+	}
+	else
+	{
+		Client *newUser = new Client(value);
+		newUser->setNickname(userId);
+		this->_users[value] = newUser;
+	}
 }
 
 void Channel::setAdmin(std::string userId, int value)
 {
-    ClientHandler a;
+	ClientHandler a;
 
-    if (a.findUser(userId, this->_admin) != NULL)
-    {
-        std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
-        send(value, error_msg.c_str(), error_msg.length(), 0);
-    }
-    else
-    {
-        Client *newUser = new Client(value);
-        newUser->setNickname(userId);
-        this->_admin[value] = newUser;
-    }
+	if (a.findUser(userId, this->_admin) != NULL)
+	{
+		std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
+		send(value, error_msg.c_str(), error_msg.length(), 0);
+	}
+	else
+	{
+		Client *newUser = new Client(value);
+		newUser->setNickname(userId);
+		this->_admin[value] = newUser;
+	}
 }
 
 void Channel::kick(std::string str)
 {
 	ClientHandler a;
-    Client *user = a.findUser(str, this->_users);
+	Client *user = a.findUser(str, this->_users);
 	if (!this->hasAdmin(str) && this->hasUser(str))
 	{
 		int fd = user->getFd();
@@ -83,11 +83,11 @@ void Channel::mode(std::string str)
 {
 	if (str.find("+i") != std::string::npos)
 	{
-		this->i = true; // JUSTE POUR TESTER INVITE ONLY
+		this->_i = true; // JUSTE POUR TESTER INVITE ONLY
 	}
 	else if (str.find("-i") != std::string::npos)
 	{
-		this->i = false;
+		this->_i = false;
 	}
 	// RAJOUTEZ LES MODES
 }
@@ -108,7 +108,7 @@ void Channel::invite(std::string clientId)
 {
 	if (this->hasUser(clientId) || this->hasAdmin(clientId) || this->isInInvitedUsers(clientId))
 		return;
-	
+
 	_invitedUsers.push_back(clientId);
 }
 
@@ -134,36 +134,33 @@ void Channel::demoteFromAdmin(std::string adminId)
 	}
 }
 
-Channel::Channel() : _creatorFd(-1), 
-      _channelId(-1), 
-      _topicStr(""), 
-      _channelIdStr(""),
-      i(false),   
-      t(false),
-      k(false),
-	  key(""),
-      l(-1)
+Channel::Channel() : _creatorFd(-1),
+					 _topicStr(""),
+					 _i(false),
+					 _t(false),
+					 _k(false),
+					 _key(""),
+					 _l(-1)
 {
 }
 
-Channel::Channel(int creatorFd, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""),  i(false),   
-      t(false),
-      k(false),
-	  key(""),
-      l(-1)
+Channel::Channel(int creatorFd) : _creatorFd(creatorFd), _topicStr("default_channel"), _i(false),
+												_t(false),
+												_k(false),
+												_key(""),
+												_l(-1)
 {
-	this->_channelIdStr = "default_channel";
-	std::string confirmation = "Created " + this->_channelIdStr + " as a new Channel.\r\n";
+	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
 }
 
-Channel::Channel(int creatorFd, std::string str, int chanelid) : _creatorFd(creatorFd), _channelId(chanelid), _topicStr(""), _channelIdStr(str),  i(false),   
-      t(false),
-      k(false),
-	  key(""),
-      l(-1)
+Channel::Channel(int creatorFd, std::string str) : _creatorFd(creatorFd), _topicStr(str), _i(false),
+																 _t(false),
+																 _k(false),
+																 _key(""),
+																 _l(-1)
 {
-	std::string confirmation = "Created " + this->_channelIdStr + " as a new Channel.\r\n";
+	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
 }
 
@@ -172,24 +169,20 @@ void Channel::topic(std::string newTopic)
 	this->_topicStr = newTopic;
 }
 
-
 void Channel::broadcastMessage(const std::string &message, int senderFd)
 {
-	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it)
+	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); it++)
 	{
 		if (it->second->getFd() != senderFd)
 		{
 			send(it->second->getFd(), message.c_str(), message.length(), 0);
 		}
 	}
-	(void)_creatorFd;
-	(void)_channelId;
 }
 
 Channel::~Channel()
 {
 }
-
 
 std::string Channel::getTopic() const
 {

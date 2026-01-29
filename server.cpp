@@ -240,7 +240,7 @@ Channel *Server::findChannel(const std::string &name)
 
 Channel &Server::createChannel(const std::string &name, const Client &creator)
 {
-    Channel ch(creator.getFd(), name, static_cast<int>(_channels.size()) + 1);
+    Channel ch(creator.getFd(), name);
     _channels[name] = ch;
     _channels[name].setAdmin(creator.getNickname(), creator.getFd());
     return _channels[name];

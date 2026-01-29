@@ -11,19 +11,17 @@ private:
 	std::map<int, Client *> _admin; // <NOM DE LUTILISATEUR, FD>
 	std::map<int, Client *> _users;
 	int _creatorFd;
-	unsigned int _channelId;
 	std::string	_topicStr;
-	std::string _channelIdStr;
 	std::vector<std::string> _invitedUsers;
-	bool i; // invite SEULEMENT les admins peuvent inviter
-	bool t; // topic SEULEMENT les admins peuvent changer le topic
-	bool k; // pour voir si le channel est protege par mot de passe
-	std::string key; // mot de passe du channel si k est activé
-	int l; //  limite le nombre de membres dans le channel et est egal a -1 si pas defini
+	bool _i; // invite SEULEMENT les admins peuvent inviter
+	bool _t; // topic SEULEMENT les admins peuvent changer le topic
+	bool _k; // pour voir si le channel est protege par mot de passe
+	std::string _key; // mot de passe du channel si k est activé
+	int _l; //  limite le nombre de membres dans le channel et est egal a -1 si pas defini
 public:
 	Channel();
-	Channel(int creatorFd, int chanelid);
-	Channel(int creatorFd, std::string str, int chanelid);
+	Channel(int creatorFd);
+	Channel(int creatorFd, std::string str);
 	~Channel();
 	bool isInInvitedUsers(std::string userId);
 	bool isInviteOnly();

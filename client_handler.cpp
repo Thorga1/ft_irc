@@ -212,7 +212,7 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 			return;
 		}
 		std::string formatted = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost PRIVMSG " + target + " :" + message;
-		sendReply(client.getFd(), formatted);
+		// sendReply(client.getFd(), formatted);
 		ch->broadcastMessage(formatted + "\r\n", client.getFd());
 		return;
 	}
