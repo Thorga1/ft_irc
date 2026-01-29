@@ -23,11 +23,6 @@ std::string Server::getPassword() const
 	return _password;
 }
 
-std::map<int, Client *> Server::getClients() const
-{
-	return _clients;
-}
-
 void Server::start()
 {
 	struct sockaddr_in sin;
@@ -68,6 +63,7 @@ void Server::acceptNewClient()
 	int client_fd = accept(_socket_fd, (sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0)
 		return;
+
 	fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
 	pollfd client_poll;
@@ -82,77 +78,91 @@ void Server::acceptNewClient()
 			  << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << std::endl;
 }
 
-void Server::handleClientData(size_t fd_index, std::map<int, Client *> clients)
+bool Server::handleClientData(size_t fd_index)
 {
 	int fd = _fds[fd_index].fd;
 	Client *client = _clients[fd];
-
 	char buffer[4096];
+
 	ssize_t bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
-	if (bytes <= 0)
+
+	if (bytes < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return true;
+		std::cout << "Recv error on fd=" << fd << std::endl;
+		removeClient(fd_index);
+		return false;
+	}
+	else if (bytes == 0)
 	{
 		std::cout << "Client disconnected: fd=" << fd << std::endl;
 		removeClient(fd_index);
-		return;
+		return false;
 	}
-
 	buffer[bytes] = '\0';
-	std::string data(buffer);
-	size_t pos = 0;
-	while (pos < data.length())
+	client->appendBuffer(buffer);
+
+	std::string &buf = client->getBuffer();
+	size_t pos;
+
+	while ((pos = buf.find('\n')) != std::string::npos)
 	{
-		size_t end = data.find('\n', pos);
-		if (end == std::string::npos)
-			break;
+		std::string line = buf.substr(0, pos);
 
-		std::string command = data.substr(pos, end - pos);
-		if (!command.empty() && command[command.length() - 1] == '\r')
-			command.erase(command.length() - 1);
+		if (!line.empty() && line[line.length() - 1] == '\r')
+			line.erase(line.length() - 1);
 
-		if (!command.empty())
-			_handler.processCommand(*client, command, clients);
+		if (!line.empty())
+			_handler.processCommand(*client, line, _clients);
 
-		pos = end + 1;
+		buf.erase(0, pos + 1);
+
+		if (client->getStatus() == Client::DISCONNECTED)
+		{
+			removeClient(fd_index);
+			return false;
+		}
 	}
+	return true;
 }
 
 void Server::removeClient(size_t fd_index)
 {
 	int fd = _fds[fd_index].fd;
-	if (_clients.find(fd) != _clients.end())
-	{
-		delete _clients[fd];
-		_clients.erase(fd);
-	}
 	close(fd);
+	delete _clients[fd];
+	_clients.erase(fd);
 	_fds.erase(_fds.begin() + fd_index);
 }
 
 void Server::run()
 {
-	std::cout << "IRC Server running... (press Ctrl+C to stop)" << std::endl;
-
 	while (true)
 	{
-		int ret = poll(_fds.data(), _fds.size(), -1);
-
+		int ret = poll(&_fds[0], _fds.size(), -1);
 		if (ret < 0)
-			throw std::runtime_error("Error: Poll failed");
-
-		if (ret == 0)
-			continue;
+			break;
 
 		for (size_t i = 0; i < _fds.size(); i++)
 		{
 			if (_fds[i].revents == 0)
 				continue;
+
 			if (_fds[i].fd == _socket_fd && (_fds[i].revents & POLLIN))
+			{
 				acceptNewClient();
+			}
 			else if (_fds[i].revents & POLLIN)
-				handleClientData(i, getClients());
+			{
+				if (handleClientData(i) == false)
+				{
+					i--;
+					continue;
+				}
+			}
 			else if (_fds[i].revents & (POLLHUP | POLLERR))
 			{
-				std::cout << "Error or hangup on fd=" << _fds[i].fd << std::endl;
 				removeClient(i);
 				i--;
 			}
@@ -176,6 +186,7 @@ void Server::stop()
 	std::cout << "IRC Server stopped" << std::endl;
 }
 
+// Utility functions
 bool isPortNumber(const std::string &str)
 {
 	if (str.empty())

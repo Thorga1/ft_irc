@@ -170,7 +170,7 @@ void ClientHandler::handleMode(Client &client, const std::vector<std::string> &a
 	Channel *ch = _server->findChannel(args[1]);
 	if (!ch)
 	{
-		sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + args[1] + " :No such channel");
+		// sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + args[1] + " :No such channel");
 		return;
 	}
 	if (!ch->hasAdmin(client.getNickname()))
@@ -235,13 +235,15 @@ void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &ar
 		std::cerr << "error: send()" << std::endl;
 	else
 		std::cout << "Sent " << bytesSent << " bytes to " << receiver->getNickname() << std::endl;
+	std::cout << "MSG from " << client.getNickname() << " to " << target << ": " << message << std::endl;
 }
 
 void ClientHandler::handleQuit(Client &client, const std::vector<std::string> &args)
 {
-	std::string reason = (args.size() > 1) ? args[1] : "Leaving";
-	std::cout << client.getNickname() << " quit: " << reason << std::endl;
-	client.disconnect();
+	std::string reason = (args.size() > 1) ? args[1] : "Client quit";
+	sendReply(client.getFd(), "ERROR :Closing Link: " + client.getNickname() + " (" + reason + ")");
+	client.setStatus(Client::DISCONNECTED);
+	std::cout << "[QUIT] Client " << client.getNickname() << " a demandé à quitter." << std::endl;
 }
 
 void ClientHandler::handleJoin(Client &client, const std::vector<std::string> &args)
@@ -388,6 +390,8 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 
 	if (client.getStatus() == Client::PENDING)
 	{
+		if (cmd == "CAP")
+			return;
 		if (cmd == "PASS")
 			handlePass(client, args);
 		else if (cmd == "QUIT")

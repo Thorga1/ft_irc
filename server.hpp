@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cerrno>
 #include <iostream>
 #include <cstdlib>
 #include <sys/socket.h>
@@ -27,7 +28,7 @@ private:
 	ClientHandler _handler;
 
 	void acceptNewClient();
-	void handleClientData(size_t fd_index, std::map<int, Client *> clients);
+	bool handleClientData(size_t fd_index);
 	void removeClient(size_t fd_index);
 	void broadcastMessage(const std::string &message);
 

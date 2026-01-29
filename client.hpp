@@ -5,7 +5,6 @@
 #include <vector>
 #include <poll.h>
 #include <unistd.h>
-#include <map>
 
 class Client
 {
