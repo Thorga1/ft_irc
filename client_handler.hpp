@@ -38,7 +38,7 @@ private:
 	void handleOperatorMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
 	void handleKeyMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
 	void handleLimitMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
-	void handleFlagModes(Client &client, Channel *ch, const std::vector<std::string> &args);
+	void handleFlagModes(Client &client, Channel *ch, char c, bool adding);
 
 	void handleQuit(Client &client, const std::vector<std::string> &args);
 };
