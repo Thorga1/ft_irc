@@ -7,6 +7,7 @@
 #include "channel.hpp"
 #include <map>
 
+class Channel;
 class Server;
 
 class ClientHandler
@@ -32,6 +33,12 @@ private:
 	void handleKick(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients);
 	void handleInvite(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients);
 	void handleTopic(Client &client, const std::vector<std::string> &args);
+
 	void handleMode(Client &client, const std::vector<std::string> &args);
+	void handleOperatorMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
+	void handleKeyMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
+	void handleLimitMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
+	void handleFlagModes(Client &client, Channel *ch, const std::vector<std::string> &args);
+
 	void handleQuit(Client &client, const std::vector<std::string> &args);
 };

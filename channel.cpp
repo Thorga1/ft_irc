@@ -34,6 +34,7 @@ std::string Channel::getModes()
 		modes += "l";
 	return modes;
 }
+
 void Channel::setUser(std::string userId, int value)
 {
 	ClientHandler a;
@@ -79,17 +80,30 @@ void Channel::kick(std::string str)
 	}
 }
 
-void Channel::mode(std::string str)
+bool Channel::isTopicProtected() const
 {
-	if (str.find("+i") != std::string::npos)
+	return _t;
+}
+
+int Channel::mode(std::string str)
+{
+	bool adding = true;
+	int i = 0;
+
+	while ((size_t)i < str.length())
 	{
-		this->_i = true; // JUSTE POUR TESTER INVITE ONLY
+		char c = str[i];
+		if (c == '+')
+			adding = true;
+		else if (c == '-')
+			adding = false;
+		else if (c == 'i')
+			_i = adding;
+		else if (c == 't')
+			_t = adding;
+		i++;
 	}
-	else if (str.find("-i") != std::string::npos)
-	{
-		this->_i = false;
-	}
-	// RAJOUTEZ LES MODES
+	return i;
 }
 
 void Channel::removeFromInvited(std::string clientId)
@@ -112,25 +126,31 @@ void Channel::invite(std::string clientId)
 	_invitedUsers.push_back(clientId);
 }
 
-void Channel::promoteToAdmin(std::string userId, int value)
+void Channel::promoteToAdmin(std::string userId)
 {
-	ClientHandler a;
-	Client *user = a.findUser(userId, this->_users);
-	if (user != NULL)
+	std::map<int, Client *>::iterator it;
+	for (it = _users.begin(); it != _users.end(); ++it)
 	{
-		this->_admin[value] = user;
-		this->_users.erase(value);
+		if (it->second->getNickname() == userId)
+		{
+			_admin[it->first] = it->second;
+			_users.erase(it);
+			return;
+		}
 	}
 }
 
 void Channel::demoteFromAdmin(std::string adminId)
 {
-	ClientHandler a;
-	Client *admin = a.findUser(adminId, this->_admin);
-	if (admin != NULL)
+	std::map<int, Client *>::iterator it;
+	for (it = _admin.begin(); it != _admin.end(); ++it)
 	{
-		this->_users[admin->getFd()] = admin;
-		this->_admin.erase(admin->getFd());
+		if (it->second->getNickname() == adminId)
+		{
+			_users[it->first] = it->second;
+			_admin.erase(it);
+			return;
+		}
 	}
 }
 
@@ -145,20 +165,20 @@ Channel::Channel() : _creatorFd(-1),
 }
 
 Channel::Channel(int creatorFd) : _creatorFd(creatorFd), _topicStr("default_channel"), _i(false),
-												_t(false),
-												_k(false),
-												_key(""),
-												_l(-1)
+								  _t(false),
+								  _k(false),
+								  _key(""),
+								  _l(-1)
 {
 	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
 }
 
 Channel::Channel(int creatorFd, std::string str) : _creatorFd(creatorFd), _topicStr(str), _i(false),
-																 _t(false),
-																 _k(false),
-																 _key(""),
-																 _l(-1)
+												   _t(false),
+												   _k(false),
+												   _key(""),
+												   _l(-1)
 {
 	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
 	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
@@ -172,6 +192,13 @@ void Channel::topic(std::string newTopic)
 void Channel::broadcastMessage(const std::string &message, int senderFd)
 {
 	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); it++)
+	{
+		if (it->second->getFd() != senderFd)
+		{
+			send(it->second->getFd(), message.c_str(), message.length(), 0);
+		}
+	}
+	for (std::map<int, Client *>::iterator it = _admin.begin(); it != _admin.end(); it++)
 	{
 		if (it->second->getFd() != senderFd)
 		{
@@ -198,7 +225,41 @@ bool Channel::hasUser(const std::string &userId)
 
 bool Channel::hasAdmin(const std::string &adminId)
 {
-	ClientHandler a;
+	for (std::map<int, Client *>::iterator it = _admin.begin(); it != _admin.end(); ++it)
+	{
+		if (it->second->getNickname() == adminId)
+			return true;
+	}
+	return false;
+}
 
-	return a.findUser(adminId, this->_admin) != NULL;
+void Channel::setKey(std::string key)
+{
+	this->_key = key;
+	this->_k = !key.empty();
+}
+
+std::string Channel::getKey() const
+{
+	return this->_key;
+}
+
+bool Channel::hasKey() const
+{
+	return this->_k;
+}
+
+void Channel::setLimit(int limit)
+{
+	this->_l = limit;
+}
+
+int Channel::getLimit() const
+{
+	return this->_l;
+}
+
+int Channel::getUserCount() const
+{
+	return _admin.size() + _users.size();
 }
