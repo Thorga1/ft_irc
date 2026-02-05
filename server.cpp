@@ -49,11 +49,13 @@ void Server::start()
 	pollfd server_fd;
 	server_fd.fd = _socket_fd;
 	server_fd.events = POLLIN;
+	server_fd.revents = 0; 
 	_fds.push_back(server_fd);
 
 	pollfd stdin_fd;
 	stdin_fd.fd = STDIN_FILENO;
 	stdin_fd.events = POLLIN;
+	stdin_fd.revents = 0;
 	_fds.push_back(stdin_fd);
 
 	std::cout << "IRC Server started on port " << _port << std::endl;
@@ -73,6 +75,7 @@ void Server::acceptNewClient()
 	pollfd client_poll;
 	client_poll.fd = client_fd;
 	client_poll.events = POLLIN;
+	client_poll.revents = 0;
 	_fds.push_back(client_poll);
 
 	Client *client = new Client(client_fd);
@@ -147,9 +150,10 @@ void Server::removeClient(size_t fd_index)
 
 void Server::run()
 {
+	int ret;
 	while (!Server::shouldStop())
 	{
-		int ret = poll(&_fds[0], _fds.size(), -1);
+		ret = poll(&_fds[0], _fds.size(), -1);
 		if (ret < 0)
 		{
 			if (errno == EINTR)
