@@ -238,7 +238,11 @@ void Server::removeClientFromChannels(const std::string &nickname)
 	{
 		it->second.removeUser(nickname);
 		if (it->second.getUserCount() == 0)
-			_channels.erase(it);
+		{
+            std::map<std::string, Channel>::iterator toErase = it;
+            ++it;
+            _channels.erase(toErase);
+        }
 		else
 			++it;
 	}
