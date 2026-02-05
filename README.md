@@ -1,18 +1,11 @@
 TO DO:
 
-1. Join a channel
-. create admins and users
-. admin commands (KICK, INVITE, TOPIC, MODE)
+1. clean fonctions
 
-3. protect user connection
-. check if username already in use
-. check PASS and USER before connecting
+2. fichiers pour chaque commande
 
-4. send and receive private messages
-. check if user exists
+3. implementer PING (WHOIS ?)
 
-5. QUIT implemented ??
+4. goto ? 
 
-6. fonction log pour remplacer les cout dans le projetl
-
-DONE:
+5. foret if -> pointeur sur fonctions
