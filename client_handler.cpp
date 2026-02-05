@@ -159,8 +159,9 @@ Client *ClientHandler::findUser(const std::string &nickname, const std::map<int,
 	return NULL;
 }
 
-void ClientHandler::handleFlagModes(Client &client, Channel *ch, char c, bool adding)
+void ClientHandler::handleFlagModes(Client &client, std::string modeStr, Channel *ch, char c, bool adding)
 {
+	ch->mode(modeStr);
 	std::string modeMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost MODE " + ch->getTopic() + " " + (adding ? "+" : "-") + c;
 	ch->broadcastMessage(modeMsg + "\r\n", -1);
 }
@@ -284,7 +285,7 @@ void ClientHandler::handleMode(Client &client, const std::vector<std::string> &a
 			handleLimitMode(client, ch, args, count, adding);
 		else if (c == 'i' || c == 't')
 		{
-			handleFlagModes(client, ch, c, adding);
+			handleFlagModes(client, modeStr, ch, c, adding);
 		}
 		else
 			sendReply(client.getFd(), ":server 472 " + client.getNickname() + " " + c + " :is unknown mode char");
