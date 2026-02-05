@@ -8,6 +8,8 @@ int main(int ac, char **av)
 			throw std::runtime_error("Usage: ./ft_irc <port> <password>");
 
 		Server server = parseArguments(av);
+		std::signal(SIGINT, Server::handleSignal);
+		std::signal(SIGTERM, Server::handleSignal);
 		server.start();
 		server.run();
 	}

@@ -1,5 +1,7 @@
 #include "server.hpp"
 
+static volatile sig_atomic_t g_should_stop = 0;
+
 Server::Server(std::string password, unsigned int port)
 	: _password(password), _port(port), _socket_fd(-1), _handler(this)
 {
@@ -8,9 +10,6 @@ Server::Server(std::string password, unsigned int port)
 Server::~Server()
 {
 	stop();
-	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-		delete it->second;
-	_clients.clear();
 }
 
 unsigned int Server::getPort() const
@@ -51,6 +50,11 @@ void Server::start()
 	server_fd.fd = _socket_fd;
 	server_fd.events = POLLIN;
 	_fds.push_back(server_fd);
+
+	pollfd stdin_fd;
+	stdin_fd.fd = STDIN_FILENO;
+	stdin_fd.events = POLLIN;
+	_fds.push_back(stdin_fd);
 
 	std::cout << "IRC Server started on port " << _port << std::endl;
 }
@@ -138,16 +142,37 @@ void Server::removeClient(size_t fd_index)
 
 void Server::run()
 {
-	while (true)
+	while (!Server::shouldStop())
 	{
 		int ret = poll(&_fds[0], _fds.size(), -1);
 		if (ret < 0)
+		{
+			if (errno == EINTR)
+			{
+				if (Server::shouldStop())
+					break;
+				continue;
+			}
 			break;
+		}
 
 		for (size_t i = 0; i < _fds.size(); i++)
 		{
 			if (_fds[i].revents == 0)
 				continue;
+
+			if (_fds[i].fd == STDIN_FILENO && (_fds[i].revents & POLLIN))
+			{
+				char ch;
+				ssize_t n = read(STDIN_FILENO, &ch, 1);
+				if (n <= 0)
+				{
+					std::cerr << "\nEOF detected. Exiting." << std::endl;
+					g_should_stop = 1;
+					break;
+				}
+				continue;
+			}
 
 			if (_fds[i].fd == _socket_fd && (_fds[i].revents & POLLIN))
 			{
@@ -168,6 +193,17 @@ void Server::run()
 			}
 		}
 	}
+}
+
+void Server::handleSignal(int signum)
+{
+	(void)signum;
+	g_should_stop = 1;
+}
+
+bool Server::shouldStop()
+{
+	return g_should_stop != 0;
 }
 
 void Server::stop()
@@ -243,16 +279,16 @@ bool Server::isNickInUse(const std::string &nick) const
 
 Channel *Server::findChannel(const std::string &name)
 {
-    std::map<std::string, Channel>::iterator it = _channels.find(name);
-    if (it == _channels.end())
-        return NULL;
-    return &it->second;
+	std::map<std::string, Channel>::iterator it = _channels.find(name);
+	if (it == _channels.end())
+		return NULL;
+	return &it->second;
 }
 
 Channel &Server::createChannel(const std::string &name, const Client &creator)
 {
-    Channel ch(creator.getFd(), name);
-    _channels[name] = ch;
-    _channels[name].setAdmin(creator.getNickname(), creator.getFd());
-    return _channels[name];
+	Channel ch(creator.getFd(), name);
+	_channels[name] = ch;
+	_channels[name].setAdmin(creator.getNickname(), creator.getFd());
+	return _channels[name];
 }

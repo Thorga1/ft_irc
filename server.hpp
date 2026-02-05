@@ -11,6 +11,7 @@
 #include <poll.h>
 #include <unistd.h>
 #include <map>
+#include <csignal>
 #include "client.hpp"
 #include "client_handler.hpp"
 #include "channel.hpp"
@@ -47,6 +48,8 @@ public:
 	void run();
 	void stop();
 	bool isNickInUse(const std::string &nick) const;
+	static void handleSignal(int signum);
+	static bool shouldStop();
 };
 
 Server parseArguments(char **av);

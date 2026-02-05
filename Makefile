@@ -1,6 +1,6 @@
 CC = c++
 NAME = ircserv
-CFLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address,undefined -g
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 OBJ_DIR = obj
 SRC = main.cpp \
 	server.cpp \
