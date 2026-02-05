@@ -37,6 +37,7 @@ public:
 	void setAdmin(std::string adminId, int value);
 	void promoteToAdmin(std::string userId);
 	void demoteFromAdmin(std::string adminId);
+	void removeUser(const std::string &userId);
 	void removeFromInvited(std::string userId);
 	bool hasUser(const std::string &userId);
 	bool hasAdmin(const std::string &adminId);

@@ -134,6 +134,11 @@ bool Server::handleClientData(size_t fd_index)
 void Server::removeClient(size_t fd_index)
 {
 	int fd = _fds[fd_index].fd;
+	std::string nickname;
+	if (_clients.find(fd) != _clients.end())
+		nickname = _clients[fd]->getNickname();
+	if (!nickname.empty())
+		removeClientFromChannels(nickname);
 	close(fd);
 	delete _clients[fd];
 	_clients.erase(fd);
@@ -217,9 +222,29 @@ void Server::stop()
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 		delete it->second;
 	_clients.clear();
+	_channels.clear();
 	_fds.clear();
 
 	std::cout << "IRC Server stopped" << std::endl;
+}
+
+void Server::removeClientFromChannels(const std::string &nickname)
+{
+	for (std::map<std::string, Channel>::iterator it = _channels.begin(); it != _channels.end();)
+	{
+		it->second.removeUser(nickname);
+		if (it->second.getUserCount() == 0)
+			_channels.erase(it);
+		else
+			++it;
+	}
+}
+
+void Server::removeChannel(const std::string &name)
+{
+	std::map<std::string, Channel>::iterator it = _channels.find(name);
+	if (it != _channels.end())
+		_channels.erase(it);
 }
 
 // Utility functions

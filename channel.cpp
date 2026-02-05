@@ -76,6 +76,7 @@ void Channel::kick(std::string str)
 	if (!this->hasAdmin(str) && this->hasUser(str))
 	{
 		int fd = user->getFd();
+		delete user;
 		this->_users.erase(fd);
 	}
 }
@@ -209,6 +210,34 @@ void Channel::broadcastMessage(const std::string &message, int senderFd)
 
 Channel::~Channel()
 {
+	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it)
+		delete it->second;
+	_users.clear();
+	for (std::map<int, Client *>::iterator it = _admin.begin(); it != _admin.end(); ++it)
+		delete it->second;
+	_admin.clear();
+}
+
+void Channel::removeUser(const std::string &userId)
+{
+	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it)
+	{
+		if (it->second->getNickname() == userId)
+		{
+			delete it->second;
+			_users.erase(it);
+			return;
+		}
+	}
+	for (std::map<int, Client *>::iterator it = _admin.begin(); it != _admin.end(); ++it)
+	{
+		if (it->second->getNickname() == userId)
+		{
+			delete it->second;
+			_admin.erase(it);
+			return;
+		}
+	}
 }
 
 std::string Channel::getTopic() const

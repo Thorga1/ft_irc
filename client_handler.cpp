@@ -97,6 +97,8 @@ void ClientHandler::handleKick(Client &client, const std::vector<std::string> &a
 	std::string kickMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost KICK " + channelName + " " + targetNick + "\r\n";
 	ch->broadcastMessage(kickMsg, -1);
 	ch->kick(targetNick);
+	if (ch->getUserCount() == 0)
+		_server->removeChannel(channelName);
 }
 
 void ClientHandler::handleUser(Client &client, const std::vector<std::string> &args)
@@ -229,67 +231,60 @@ void ClientHandler::handleOperatorMode(Client &client, Channel *ch, const std::v
 	ch->broadcastMessage(modeMsg + "\r\n", -1);
 }
 
-void ClientHandler::handleMode(Client &client, const std::vector<std::string> &args)
+ void ClientHandler::handleMode(Client &client, const std::vector<std::string> &args)
 {
-	int count = 3;
-	bool adding = true;
+    int count = 3;
+    bool adding = true;
 
-	if (args.size() < 2)
-	{
-		sendReply(client.getFd(), ":server 461 " + client.getNickname() + " MODE :Not enough parameters");
-		return;
-	}
-	Channel *ch = _server->findChannel(args[1]);
-	if (!ch)
-		return;
-	if (!ch->hasAdmin(client.getNickname()))
-	{
-		sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + args[1] + " :You're not channel operator");
-		return;
-	}
-	if (args.size() == 2)
-	{
-		sendReply(client.getFd(), ":server 324 " + client.getNickname() + " " + args[1] + " :" + ch->getModes());
-		return;
-	}
-	std::string modeStr = args[2];
-	// bool adding = (modeStr.find('+') != std::string::npos);
+    if (args.size() < 2)
+    {
+        sendReply(client.getFd(), ":server 461 " + client.getNickname() + " MODE :Not enough parameters");
+        return;
+    }
+    Channel *ch = _server->findChannel(args[1]);
+    if (!ch)
+        return;
+    if (!ch->hasAdmin(client.getNickname()))
+    {
+        sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + args[1] + " :You're not channel operator");
+        return;
+    }
+    if (args.size() == 2)
+    {
+        sendReply(client.getFd(), ":server 324 " + client.getNickname() + " " + args[1] + " :" + ch->getModes());
+        return;
+    }
+    std::string modeStr = args[2];
+    for (size_t i = 0; i < modeStr.length(); i++)
+    {
+        char c = modeStr[i];
 
-	// if (modeStr.find('o') != std::string::npos)
-	// 	handleOperatorMode(client, ch, args, adding);
-	// if (modeStr.find('k') != std::string::npos)
-	// 	handleKeyMode(client, ch, args, adding);
-	// if (modeStr.find('l') != std::string::npos)
-	// 	handleLimitMode(client, ch, args, adding);
-	// if (modeStr.find('i') != std::string::npos || modeStr.find('t') != std::string::npos)
-	// 	handleFlagModes(client, ch, modeStr);
-
-	for (size_t i = 0; i < modeStr.length(); i++)
-	{
-		char c = modeStr[i];
-		if (c == '+')
-		{
-			adding = true;
-			continue;
-		}
-		if (c == '-')
-		{
-			adding = false;
-			continue;
-		}
-		if (c == 'o')
-			handleOperatorMode(client, ch, args, count, adding);
-		else if (c == 'k')
-			handleKeyMode(client, ch, args, count, adding);
-		else if (c == 'l')
-			handleLimitMode(client, ch, args, count, adding);
-		else if (c == 'i' || c == 't')
-		{
-			handleFlagModes(client, modeStr, ch, c, adding);
-		}
-		else
-			sendReply(client.getFd(), ":server 472 " + client.getNickname() + " " + c + " :is unknown mode char");
-	}
+        if (c == '+')
+        {
+            adding = true;
+            continue;
+        }
+        else if (c == '-')
+        {
+            adding = false;
+            continue;
+        }
+        else if (c == 'o')
+            handleOperatorMode(client, ch, args, count, adding);
+        else if (c == 'k')
+            handleKeyMode(client, ch, args, count, adding);
+        else if (c == 'l')
+            handleLimitMode(client, ch, args, count, adding);
+        else if (c == 'i' || c == 't')
+        {
+            handleFlagModes(client, modeStr, ch, c, adding);
+        }
+        else
+        {
+            sendReply(client.getFd(), ":server 472 " + client.getNickname() + " " + c + " :is unknown mode char");
+            break;
+        }
+    }
 }
 void ClientHandler::handleMsg(Client &client, const std::vector<std::string> &args, std::map<int, Client *> clients)
 {

@@ -44,6 +44,7 @@ public:
 	Channel *findChannel(const std::string &name);
 	Channel &createChannel(const std::string &name, const Client &creator);
 	void removeClientFromChannels(const std::string &nickname);
+	void removeChannel(const std::string &name);
 	void start();
 	void run();
 	void stop();
