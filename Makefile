@@ -5,8 +5,21 @@ OBJ_DIR = obj
 SRC = main.cpp \
 	server.cpp \
 	client.cpp \
-	client_handler.cpp \
-	channel.cpp
+	Client_handler.cpp \
+	channel.cpp \
+	Invite.cpp \
+	Join.cpp \
+	Kick.cpp \
+	Mode.cpp \
+	Nick.cpp \
+	Pass.cpp \
+	Privmsg.cpp \
+	Quit.cpp \
+	Topic.cpp \
+	User.cpp \
+	Ping.cpp \
+	WhoIs.cpp
+
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 DIRS = $(sort $(dir $(OBJ)))
 
