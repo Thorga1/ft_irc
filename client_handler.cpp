@@ -504,6 +504,14 @@ void ClientHandler::handleInvite(Client &client, const std::vector<std::string> 
 	std::string inviteMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost INVITE " + targetNick + " :" + channelName;
 	sendReply(targetClient->getFd(), inviteMsg);
 }
+
+void ClientHandler::handlePing(Client &client, const std::vector<std::string> &args)
+{
+	if (args.size() != 2)
+		return (sendReply(client.getFd(), ":server 421 " + client.getNickname() + " " + "PING" + " :Unknown command"));
+	std::string inviteMsg = "PONG: " + args[args.size()- 1];
+	sendReply(client.getFd(), inviteMsg);
+}
 void ClientHandler::processCommand(Client &client, const std::string &command, std::map<int, Client *> clients)
 {
 	std::vector<std::string> args = parseCommand(command);
@@ -541,13 +549,14 @@ void ClientHandler::processCommand(Client &client, const std::string &command, s
 			sendReply(client.getFd(), ":server 451 * :You must set your NICK and USER before chatting");
 		return;
 	}
-
 	if (cmd == "PRIVMSG" || cmd == "MSG")
 		handleMsg(client, args, clients);
 	else if (cmd == "JOIN")
 		handleJoin(client, args);
 	else if (cmd == "INVITE")
 		handleInvite(client, args, clients);
+	else if (cmd == "PING")
+			handlePing(client, args);
 	else if (cmd == "KICK")
 		handleKick(client, args, clients);
 	else if (cmd == "QUIT")

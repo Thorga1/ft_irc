@@ -39,6 +39,7 @@ private:
 	void handleKeyMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
 	void handleLimitMode(Client &client, Channel *ch, const std::vector<std::string> &args, int &count, bool adding);
 	void handleFlagModes(Client &client, std::string modeStr, Channel *ch, char c, bool adding);
+	void handlePing(Client &client, const std::vector<std::string> &args);
 
 	void handleQuit(Client &client, const std::vector<std::string> &args);
 };
