@@ -13,9 +13,12 @@
 #include <map>
 #include <csignal>
 #include "client.hpp"
-#include "client_handler.hpp"
+#include "Client_handler.hpp"
 #include "channel.hpp"
 #include <map>
+
+class ClientHandler;
+class Channel;
 
 class Server
 {
@@ -26,7 +29,7 @@ private:
 	std::vector<pollfd> _fds;
 	std::map<int, Client *> _clients;
 	std::map<std::string, Channel> _channels;
-	ClientHandler _handler;
+	ClientHandler* _handler;
 
 	void acceptNewClient();
 	bool handleClientData(size_t fd_index);
@@ -51,6 +54,7 @@ public:
 	bool isNickInUse(const std::string &nick) const;
 	static void handleSignal(int signum);
 	static bool shouldStop();
+	Client *getClientByNick(const std::string &nickname);
 };
 
 Server parseArguments(char **av);

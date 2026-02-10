@@ -3,12 +3,14 @@
 static volatile sig_atomic_t g_should_stop = 0;
 
 Server::Server(std::string password, unsigned int port)
-	: _password(password), _port(port), _socket_fd(-1), _handler(this)
+	: _password(password), _port(port), _socket_fd(-1)
 {
+	_handler = new ClientHandler(this);
 }
 
 Server::~Server()
 {
+	delete _handler;
 	stop();
 }
 
@@ -49,7 +51,7 @@ void Server::start()
 	pollfd server_fd;
 	server_fd.fd = _socket_fd;
 	server_fd.events = POLLIN;
-	server_fd.revents = 0; 
+	server_fd.revents = 0;
 	_fds.push_back(server_fd);
 
 	pollfd stdin_fd;
@@ -121,7 +123,7 @@ bool Server::handleClientData(size_t fd_index)
 			line.erase(line.length() - 1);
 
 		if (!line.empty())
-			_handler.processCommand(*client, line, _clients);
+			_handler->processCommand(*client, line);
 
 		buf.erase(0, pos + 1);
 
@@ -239,10 +241,10 @@ void Server::removeClientFromChannels(const std::string &nickname)
 		it->second.removeUser(nickname);
 		if (it->second.getUserCount() == 0)
 		{
-            std::map<std::string, Channel>::iterator toErase = it;
-            ++it;
-            _channels.erase(toErase);
-        }
+			std::map<std::string, Channel>::iterator toErase = it;
+			++it;
+			_channels.erase(toErase);
+		}
 		else
 			++it;
 	}
@@ -324,4 +326,15 @@ Channel &Server::createChannel(const std::string &name, const Client &creator)
 	_channels[name] = ch;
 	_channels[name].setAdmin(creator.getNickname(), creator.getFd());
 	return _channels[name];
+}
+
+Client *Server::getClientByNick(const std::string &nickname)
+{
+	std::map<int, Client *>::iterator it;
+	for (it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second->getNickname() == nickname)
+			return it->second;
+	}
+	return NULL;
 }

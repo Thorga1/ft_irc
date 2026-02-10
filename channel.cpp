@@ -1,10 +1,56 @@
 #include "channel.hpp"
 #include <sys/socket.h>
 
-// int Channel::getUser(std::string userId)
-// {
-// 	return this->_users->_fd;
-// }
+Channel::Channel() : _creatorFd(-1),
+					 _topicStr(""),
+					 _i(false),
+					 _t(false),
+					 _k(false),
+					 _key(""),
+					 _l(-1)
+{
+}
+
+Channel::Channel(int creatorFd) : _creatorFd(creatorFd), _topicStr("default_channel"), _i(false),
+								  _t(false),
+								  _k(false),
+								  _key(""),
+								  _l(-1)
+{
+	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
+	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
+}
+
+Channel::Channel(int creatorFd, std::string str) : _creatorFd(creatorFd), _topicStr(str), _i(false),
+												   _t(false),
+												   _k(false),
+												   _key(""),
+												   _l(-1)
+{
+	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
+	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
+}
+
+Channel::~Channel()
+{
+	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it)
+		delete it->second;
+	_users.clear();
+	for (std::map<int, Client *>::iterator it = _admin.begin(); it != _admin.end(); ++it)
+		delete it->second;
+	_admin.clear();
+}
+
+Client *Channel::findUser(const std::string &nickname, const std::map<int, Client *> &clients)
+{
+	for (std::map<int, Client *>::const_iterator it = clients.begin(); it != clients.end(); ++it)
+	{
+		Client *client = it->second;
+		if (client->getNickname() == nickname)
+			return client;
+	}
+	return NULL;
+}
 
 bool Channel::isInInvitedUsers(std::string userId)
 {
@@ -37,9 +83,7 @@ std::string Channel::getModes()
 
 void Channel::setUser(std::string userId, int value)
 {
-	ClientHandler a;
-
-	if (a.findUser(userId, this->_users) != NULL)
+	if (findUser(userId, this->_users) != NULL)
 	{
 		std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
 		send(value, error_msg.c_str(), error_msg.length(), 0);
@@ -54,9 +98,7 @@ void Channel::setUser(std::string userId, int value)
 
 void Channel::setAdmin(std::string userId, int value)
 {
-	ClientHandler a;
-
-	if (a.findUser(userId, this->_admin) != NULL)
+	if (findUser(userId, this->_admin) != NULL)
 	{
 		std::string error_msg = "Error: User " + userId + " is already in the channel.\r\n";
 		send(value, error_msg.c_str(), error_msg.length(), 0);
@@ -71,8 +113,7 @@ void Channel::setAdmin(std::string userId, int value)
 
 void Channel::kick(std::string str)
 {
-	ClientHandler a;
-	Client *user = a.findUser(str, this->_users);
+	Client *user = findUser(str, this->_users);
 	if (!this->hasAdmin(str) && this->hasUser(str))
 	{
 		int fd = user->getFd();
@@ -155,35 +196,6 @@ void Channel::demoteFromAdmin(std::string adminId)
 	}
 }
 
-Channel::Channel() : _creatorFd(-1),
-					 _topicStr(""),
-					 _i(false),
-					 _t(false),
-					 _k(false),
-					 _key(""),
-					 _l(-1)
-{
-}
-
-Channel::Channel(int creatorFd) : _creatorFd(creatorFd), _topicStr("default_channel"), _i(false),
-								  _t(false),
-								  _k(false),
-								  _key(""),
-								  _l(-1)
-{
-	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
-	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
-}
-
-Channel::Channel(int creatorFd, std::string str) : _creatorFd(creatorFd), _topicStr(str), _i(false),
-												   _t(false),
-												   _k(false),
-												   _key(""),
-												   _l(-1)
-{
-	std::string confirmation = "Created " + this->_topicStr + " as a new Channel.\r\n";
-	send(_creatorFd, confirmation.c_str(), confirmation.length(), 0);
-}
 
 void Channel::topic(std::string newTopic)
 {
@@ -206,16 +218,6 @@ void Channel::broadcastMessage(const std::string &message, int senderFd)
 			send(it->second->getFd(), message.c_str(), message.length(), 0);
 		}
 	}
-}
-
-Channel::~Channel()
-{
-	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it)
-		delete it->second;
-	_users.clear();
-	for (std::map<int, Client *>::iterator it = _admin.begin(); it != _admin.end(); ++it)
-		delete it->second;
-	_admin.clear();
 }
 
 void Channel::removeUser(const std::string &userId)
@@ -247,9 +249,8 @@ std::string Channel::getTopic() const
 
 bool Channel::hasUser(const std::string &userId)
 {
-	ClientHandler a;
 
-	return a.findUser(userId, this->_users) != NULL;
+	return findUser(userId, this->_users) != NULL;
 }
 
 bool Channel::hasAdmin(const std::string &adminId)

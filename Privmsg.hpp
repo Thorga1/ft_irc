@@ -1,0 +1,14 @@
+#ifndef PRIVMSG_HPP
+#define PRIVMSG_HPP
+
+#include "ACommand.hpp"
+
+class Privmsg : public ACommand
+{
+public:
+	Privmsg(Server *server);
+	~Privmsg();
+	void execute(Client &client, const std::vector<std::string> &args);
+};
+
+#endif

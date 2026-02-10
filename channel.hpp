@@ -3,7 +3,7 @@
 
 #include <string>
 #include <map>
-#include "client_handler.hpp"
+#include "Client_handler.hpp"
 
 class Channel
 {
@@ -52,6 +52,8 @@ public:
 	void setLimit(int limit);
 	int getLimit() const;
 	int getUserCount() const;
+
+	Client *findUser(const std::string &nickname, const std::map<int, Client *> &clients);
 };
 
 #endif
