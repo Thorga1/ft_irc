@@ -45,7 +45,7 @@ void ClientHandler::processCommand(Client &client, const std::string &rawLine)
 	std::string cmdName = args[0];
 	std::transform(cmdName.begin(), cmdName.end(), cmdName.begin(), ::toupper);
 
-	if (client.getStatus() == Client::PENDING && cmdName != "PASS" && cmdName != "QUIT")
+	if (client.getStatus() == Client::PENDING && cmdName != "PASS" && cmdName != "QUIT" && cmdName != "MODE" && cmdName != "CAP")
 	{
 		_commands["PASS"]->sendReply(client.getFd(), ":server 451 * :Register with PASS first");
 		return;
@@ -55,8 +55,10 @@ void ClientHandler::processCommand(Client &client, const std::string &rawLine)
 	{
 		_commands[cmdName]->execute(client, args);
 	}
-	else
+	else if (cmdName != "CAP")
+	{
 		_commands["JOIN"]->sendReply(client.getFd(), ":server 421 " + client.getNickname() + " " + cmdName + " :Unknown command");
+	}
 }
 
 std::vector<std::string> ClientHandler::parseCommand(const std::string &command)

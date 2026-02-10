@@ -85,17 +85,23 @@ void Mode::execute(Client &client, const std::vector<std::string> &args)
 		sendReply(client.getFd(), ":server 461 " + client.getNickname() + " MODE :Not enough parameters");
 		return;
 	}
+	std::string target = args[1];
+	
+	if (target[0] != '#' && target[0] != '&')
+	{
+		return ;
+	}
 
-	Channel *ch = _server->findChannel(args[1]);
+	Channel *ch = _server->findChannel(target);
 	if (!ch)
 	{
-		sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + args[1] + " :No such channel");
+		sendReply(client.getFd(), ":server 403 " + client.getNickname() + " " + target + " :No such channel");
 		return;
 	}
 
 	if (!ch->hasAdmin(client.getNickname()))
 	{
-		sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + args[1] + " :You're not channel operator");
+		sendReply(client.getFd(), ":server 482 " + client.getNickname() + " " + target + " :You're not channel operator");
 		return;
 	}
 
