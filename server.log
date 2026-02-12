@@ -1,0 +1,74 @@
+IRC Server started on port 6667
+New client connected: fd=4 from 127.0.0.1:57772
+[QUIT] Client  has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57788
+[NICK] FD 4 changed nickname to: testuser
+[QUIT] Client testuser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57792
+[QUIT] Client  has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57794
+[NICK] FD 4 changed nickname to: pinguser
+[QUIT] Client pinguser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57810
+[QUIT] Client  has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57824
+[NICK] FD 4 changed nickname to: dupuser
+New client connected: fd=5 from 127.0.0.1:57838
+[QUIT] Client dupuser has quit (Client quit).
+[QUIT] Client  has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57852
+[NICK] FD 4 changed nickname to: user1
+[NICK] FD 4 changed nickname to: user1_new
+[QUIT] Client user1_new has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57858
+[NICK] FD 4 changed nickname to: channeluser
+[QUIT] Client channeluser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57862
+[NICK] FD 4 changed nickname to: multiuser
+[QUIT] Client multiuser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57878
+[NICK] FD 4 changed nickname to: admini
+New client connected: fd=5 from 127.0.0.1:57892
+[NICK] FD 5 changed nickname to: guesti
+[QUIT] Client guesti has quit (Client quit).
+[QUIT] Client admini has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57902
+[NICK] FD 4 changed nickname to: admink
+New client connected: fd=5 from 127.0.0.1:57908
+[NICK] FD 5 changed nickname to: guestk
+[QUIT] Client guestk has quit (Client quit).
+[QUIT] Client admink has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57924
+[NICK] FD 4 changed nickname to: adminl
+New client connected: fd=5 from 127.0.0.1:57936
+[NICK] FD 5 changed nickname to: guestl
+[QUIT] Client guestl has quit (Client quit).
+[QUIT] Client adminl has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57948
+[NICK] FD 4 changed nickname to: admint
+New client connected: fd=5 from 127.0.0.1:57954
+[NICK] FD 5 changed nickname to: guestt
+[QUIT] Client guestt has quit (Client quit).
+[QUIT] Client admint has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57964
+[NICK] FD 4 changed nickname to: msguser
+[QUIT] Client msguser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57970
+[NICK] FD 4 changed nickname to: modeuser
+[QUIT] Client modeuser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:57986
+[NICK] FD 4 changed nickname to: topicuser
+[QUIT] Client topicuser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:44006
+[NICK] FD 4 changed nickname to: opuser
+[QUIT] Client opuser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:44020
+[NICK] FD 4 changed nickname to: inviter
+[QUIT] Client inviter has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:44036
+[NICK] FD 4 changed nickname to: robustuser
+[QUIT] Client robustuser has quit (Client quit).
+New client connected: fd=4 from 127.0.0.1:44042
+[NICK] FD 4 changed nickname to: disconnuser
+Client disconnected: fd=4
+IRC Server stopped

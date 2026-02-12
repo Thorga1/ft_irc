@@ -1,24 +1,25 @@
 CC = c++
 NAME = ircserv
-CFLAGS = -Wall -Wextra -Werror -std=c++98 -g
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -g -Iincludes
 OBJ_DIR = obj
-SRC = main.cpp \
-	server.cpp \
-	client.cpp \
-	Client_handler.cpp \
-	channel.cpp \
-	Invite.cpp \
-	Join.cpp \
-	Kick.cpp \
-	Mode.cpp \
-	Nick.cpp \
-	Pass.cpp \
-	Privmsg.cpp \
-	Quit.cpp \
-	Topic.cpp \
-	User.cpp \
-	Ping.cpp \
-	WhoIs.cpp
+SRC = src/main.cpp \
+	src/server.cpp \
+	src/client.cpp \
+	src/Client_handler.cpp \
+	src/channel.cpp \
+	src/commands/ACommand.cpp \
+	src/commands/Invite.cpp \
+	src/commands/Join.cpp \
+	src/commands/Kick.cpp \
+	src/commands/Mode.cpp \
+	src/commands/Nick.cpp \
+	src/commands/Pass.cpp \
+	src/commands/Privmsg.cpp \
+	src/commands/Quit.cpp \
+	src/commands/Topic.cpp \
+	src/commands/User.cpp \
+	src/commands/Ping.cpp \
+	src/commands/WhoIs.cpp
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 DIRS = $(sort $(dir $(OBJ)))
