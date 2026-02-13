@@ -57,6 +57,7 @@ Channel::~Channel()
 {
 	clearClientMap(_users);
 	clearClientMap(_admin);
+	clearClientMap(_kicked);
 }
 
 Channel &Channel::operator=(const Channel &other)
@@ -258,13 +259,16 @@ void Channel::broadcastMessage(const std::string &message, int senderFd)
 	}
 }
 
-void Channel::removeUser(const std::string &userId)
+void Channel::removeUser(const std::string &userId, uint8_t flag)
 {
 	for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it)
 	{
 		if (it->second->getNickname() == userId)
 		{
-			delete it->second;
+
+			_kicked[it->first] = it->second;
+			if (flag)
+				delete it->second;
 			_users.erase(it);
 			return;
 		}
@@ -273,7 +277,9 @@ void Channel::removeUser(const std::string &userId)
 	{
 		if (it->second->getNickname() == userId)
 		{
-			delete it->second;
+			_kicked[it->first] = it->second;
+			if (flag)
+				delete it->second;
 			_admin.erase(it);
 			return;
 		}

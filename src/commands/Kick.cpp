@@ -55,7 +55,7 @@ void Kick::execute(Client &client, const std::vector<std::string> &args)
 
 	std::string kickMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost KICK " + args[1] + " " + targetNick + "\r\n";
 	ch->broadcastMessage(kickMsg, -1);
-	ch->kick(targetNick);
+	ch->removeUser(targetNick, 0);
 
 	if (ch->getUserCount() == 0)
 		_server->removeChannel(args[1]);

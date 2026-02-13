@@ -9,6 +9,7 @@ class Channel
 private:
 	std::map<int, Client *> _admin; // <NOM DE LUTILISATEUR, FD>
 	std::map<int, Client *> _users;
+	std::map<int, Client *> _kicked;
 	int _creatorFd;
 	std::string _topicStr;
 	std::vector<std::string> _invitedUsers;
@@ -38,7 +39,7 @@ public:
 	void setAdmin(std::string adminId, int value);
 	void promoteToAdmin(std::string userId);
 	void demoteFromAdmin(std::string adminId);
-	void removeUser(const std::string &userId);
+	void removeUser(const std::string &userId, uint8_t flag);
 	void removeFromInvited(std::string userId);
 	bool hasUser(const std::string &userId);
 	bool hasAdmin(const std::string &adminId);
